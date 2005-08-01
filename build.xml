@@ -46,6 +46,7 @@
 	<path id="test.lib.classpath">
 		<fileset dir="${lib.dir}">
 			<include name="junit-3.8.1.jar" />
+			<include name="sleepycat-je_2.0.54.jar"/>
 		</fileset>
 	</path>
 
