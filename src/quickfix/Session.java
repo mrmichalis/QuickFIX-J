@@ -1067,8 +1067,11 @@ public class Session {
 
         if (!state.isLogonReceived()) {
             if (state.isLogonSendNeeded()) {
-                generateLogon();
-                state.logEvent("Initiated logon request");
+                if (generateLogon()) {
+                    state.logEvent("Initiated logon request");
+                } else {
+                    state.logEvent("Error during logon request initiation");
+                }
             } else if (state.isLogonAlreadySent() && state.isLogonTimedOut()) {
                 state.logEvent("Timed out waiting for logon response");
                 disconnect();
@@ -1117,7 +1120,7 @@ public class Session {
         sendRaw(testRequest, 0);
     }
 
-    private void generateLogon() {
+    private boolean generateLogon() {
         Message logon = messageFactory.create(sessionID.getBeginString(), MsgType.LOGON);
         logon.setInt(EncryptMethod.FIELD, 0);
         logon.setInt(HeartBtInt.FIELD, state.getHeartBeatInterval());
@@ -1128,7 +1131,7 @@ public class Session {
         state.setLastReceivedTime(System.currentTimeMillis());
         state.clearTestRequestCounter();
         state.setLogonSent(true);
-        sendRaw(logon, 0);
+        return sendRaw(logon, 0);
     }
 
     /**
