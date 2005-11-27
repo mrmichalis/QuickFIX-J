@@ -56,12 +56,7 @@ public class SocketInitiator extends AbstractSocketInitiator {
     protected void onBlock() {
         while (!isStopRequested()) {
             try {
-                Object event = eventQueue.take();
-                if (event instanceof Message) {
-                    processMessage((Message) event);
-                } else if (event instanceof Session) {
-                    processTimerEvent((Session) event);
-                }
+                processEvent(eventQueue.take());
             } catch (InterruptedException e) {
                 return;
             }
@@ -83,15 +78,18 @@ public class SocketInitiator extends AbstractSocketInitiator {
         }
 
         if (eventQueue.peek() != null) {
-            Object event = eventQueue.poll();
-            if (event instanceof Message) {
-                processMessage((Message) event);
-            } else if (event instanceof Session) {
-                processTimerEvent((Session) event);
-            }
+            processEvent(eventQueue.poll());
         }
 
         return true;
+    }
+
+    private void processEvent(Object event) {
+        if (event instanceof Message) {
+            processMessage((Message) event);
+        } else if (event instanceof Session) {
+            processTimerEvent((Session) event);
+        }
     }
 
     protected void onStop() {
