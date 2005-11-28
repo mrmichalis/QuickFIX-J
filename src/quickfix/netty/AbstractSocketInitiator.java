@@ -115,10 +115,13 @@ public abstract class AbstractSocketInitiator implements Initiator {
     }
 
     public final void stop(boolean force) {
+        onStop();
+
         if (!isStopRequested) {
             isStopRequested = true;
             stopRequestTimestamp = System.currentTimeMillis();
         }
+        
         synchronized (sessionConnections) {
             for (int i = 0; i < sessionConnections.size(); i++) {
                 ((SessionConnection) sessionConnections.get(i)).getQuickFixSession().logout();
@@ -135,7 +138,6 @@ public abstract class AbstractSocketInitiator implements Initiator {
             }
         }
 
-        onStop();
         timer.cancel();
         ioProcessor.stop();
     }

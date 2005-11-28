@@ -93,7 +93,8 @@ public class SocketInitiator extends AbstractSocketInitiator {
     }
 
     protected void onStop() {
-        // empty
+        // during stop, process events (like logout) in timer thread
+        eventQueue = null;
     }
 
     protected void onMessage(Message message) {

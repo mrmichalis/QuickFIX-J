@@ -82,7 +82,8 @@ public class SocketAcceptor extends AbstractSocketAcceptor {
     }
 
     protected void onStop() {
-        // empty
+        // during stop, process events (like logout) in timer thread
+        messageQueue = null;
     }
 
     protected void onMessage(Session nettySession, Message message) {

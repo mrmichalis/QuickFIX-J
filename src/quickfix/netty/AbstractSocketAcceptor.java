@@ -342,6 +342,8 @@ public abstract class AbstractSocketAcceptor implements Acceptor {
     }
 
     public final void stop(boolean force) {
+        onStop();
+        
         if (!isStopRequested) {
             isStopRequested = true;
             stopRequestTime = System.currentTimeMillis();
