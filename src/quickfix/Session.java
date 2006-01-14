@@ -958,6 +958,15 @@ public class Session {
                 return false;
             }
 
+            if ((checkTooHigh || checkTooLow) && state.isResendRequested()) {
+                int[] range = state.getResendRange();
+                
+                if (msgSeqNum >= range[1]) {
+                    state.logEvent("ResendRequest for messages FROM: " + range[0] +
+                            " TO: " + range[1] + " has been satisfied.");
+                    state.setResendRange(0, 0);
+                }
+            }
         } catch (FieldNotFound e) {
             throw e;
         } catch (Exception e) {
@@ -1234,9 +1243,6 @@ public class Session {
         Message msg = state.dequeue(num);
 
         if (msg != null) {
-            if (state.isResendRequested()) {
-                state.setResendRange(0, 0);
-            }
             state.logEvent("Processing QUEUED message: " + num);
             String msgType = msg.getHeader().getString(MsgType.FIELD);
             if (msgType.equals(MsgType.LOGON) || msgType.equals(MsgType.RESEND_REQUEST)) {
@@ -1288,7 +1294,7 @@ public class Session {
         if (state.isResendRequested()) {
             int[] range = state.getResendRange();
 
-            if (msgSeqNum > range[0] && (range[1] == 0 || msgSeqNum < range[1])) {
+            if (msgSeqNum >= range[0]) {
                 state.logEvent("Already sent ResendRequest FROM: " + range[0] + " TO: " + range[1]
                         + ".  Not sending another.");
                 return;
@@ -1313,7 +1319,7 @@ public class Session {
         initializeHeader(resendRequest.getHeader());
         sendRaw(resendRequest, 0);
         state.getLog().onEvent("Sent ResendRequest FROM: " + beginSeqNo + " TO: " + endSeqNo);
-        state.setResendRange(beginSeqNo, endSeqNo);
+        state.setResendRange(beginSeqNo, msgSeqNum - 1);
     }
 
     private boolean doPossDup(Message msg) throws FieldNotFound, IOException {
