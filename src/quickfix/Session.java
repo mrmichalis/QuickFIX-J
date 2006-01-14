@@ -1024,7 +1024,7 @@ public class Session {
                 || !msgType.equals(MsgType.LOGON) && state.isLogonReceived()) {
             return true;
         }
-        if (!msgType.equals(MsgType.LOGOUT) && state.isLogonSent()) {
+        if (msgType.equals(MsgType.LOGOUT) && state.isLogonSent()) {
             return true;
         }
         if (!msgType.equals(MsgType.LOGOUT) && state.isLogoutSent()) {
