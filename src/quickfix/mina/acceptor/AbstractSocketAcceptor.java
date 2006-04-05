@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.mina.common.IoAcceptor;
-import org.apache.mina.transport.socket.nio.SocketAcceptor;
 
 import quickfix.Acceptor;
 import quickfix.Application;
@@ -43,8 +42,8 @@ import quickfix.SessionID;
 import quickfix.SessionSettings;
 import quickfix.mina.EventHandlingStrategy;
 import quickfix.mina.NetworkingOptions;
-import quickfix.mina.SessionConnector;
 import quickfix.mina.ProtocolFactory;
+import quickfix.mina.SessionConnector;
 
 public abstract class AbstractSocketAcceptor extends SessionConnector implements Acceptor {
     private final SessionFactory sessionFactory;
