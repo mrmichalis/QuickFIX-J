@@ -1,8 +1,6 @@
 package quickfix.test.acceptance;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,7 +20,7 @@ public class ConnectToServerStep implements TestStep {
         this.command = data;
     }
 
-    public void run(TestResult result, TestContext context) {
+    public void run(TestResult result, TestConnection connection) {
         Matcher matcher = CONNECT_PATTERN.matcher(command);
         if (matcher.lookingAt()) {
             if (matcher.group(1) != null) {
@@ -43,9 +41,7 @@ public class ConnectToServerStep implements TestStep {
             }
         }
         try {
-            Socket socket = new Socket(InetAddress.getByName("localhost"), 9877);
-            context.setClientSocket(clientId, socket);
-            log.debug("connected: "+socket.getLocalSocketAddress());
+            connection.connect(clientId);
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }

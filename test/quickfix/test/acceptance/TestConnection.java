@@ -3,25 +3,39 @@ package quickfix.test.acceptance;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class TestContext {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import junit.framework.Assert;
+
+public class TestConnection {
+    private Logger log = LoggerFactory.getLogger(getClass());
     private HashMap clientSockets = new HashMap();
     private HashMap messageReaders = new HashMap();
 
-    public OutputStream getClientOutputStream(int clientId) throws IOException {
+    public void sendMessage(int clientId, String message) throws IOException {
+        OutputStream clientOutputStream = getClientOutputStream(clientId);
+        clientOutputStream.write(message.getBytes());
+        clientOutputStream.flush();        
+    }
+    
+    private OutputStream getClientOutputStream(int clientId) throws IOException {
         return getClientSocket(clientId).getOutputStream();
     }
 
-    public Socket getClientSocket(int clientId) {
+    private Socket getClientSocket(int clientId) {
         return (Socket) clientSockets.get(new Integer(clientId));
     }
 
-    public void setClientSocket(int clientId, Socket socket) {
+    private void setClientSocket(int clientId, Socket socket) {
         clientSockets.put(new Integer(clientId), socket);
         messageReaders.put(new Integer(clientId), new MessageReader(clientId, socket));
     }
@@ -41,7 +55,7 @@ public class TestContext {
         clientSockets.clear();
     }
 
-    public CharSequence getNextMessage(int clientId, long timeout) throws InterruptedException {
+    public CharSequence readMessage(int clientId, long timeout) throws InterruptedException {
         MessageReader reader = (MessageReader) messageReaders.get(new Integer(clientId));
         return reader.getNextMessage(timeout);
     }
@@ -143,6 +157,26 @@ public class TestContext {
                 return (CharSequence) messages.remove(0);
             }
         }
+    }
+
+    public void waitForClientDisconnect(int clientId) throws IOException {
+        Socket socket = getClientSocket(clientId);
+        try {
+            while (socket.getInputStream().read() != -1) { }
+        } catch (IOException e) {
+            // not a problem
+        }
+        if (socket.getInputStream().read() != -1) {
+            Assert.fail("client not disconnected");
+        } else {
+            log.debug("client "+clientId+" disconnected");
+        }
+    }
+
+    public void connect(int clientId) throws UnknownHostException, IOException {
+        Socket socket = new Socket(InetAddress.getByName("localhost"), 9877);
+        setClientSocket(clientId, socket);
+        log.debug("connected: "+socket.getLocalSocketAddress());
     }
 
 }

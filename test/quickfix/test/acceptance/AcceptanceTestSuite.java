@@ -49,20 +49,20 @@ public class AcceptanceTestSuite extends TestSuite {
 
         public void run(TestResult result) {
             result.startTest(this);
-            TestContext context = null;
+            TestConnection connection = null;
             try {
-                context = new TestContext();
+                connection = new TestConnection();
                 List testSteps = load(filename);
                 for (int i = 0; i < testSteps.size(); i++) {
-                    ((TestStep) testSteps.get(i)).run(result, context);
+                    ((TestStep) testSteps.get(i)).run(result, connection);
                 }
             } catch (AssertionFailedError e) {
                 result.addFailure(this, e);
             } catch (Throwable t) {
                 result.addError(this, t);
             } finally {
-                if (context != null) {
-                    context.tearDown();
+                if (connection != null) {
+                    connection.tearDown();
                 }
             }
             result.endTest(this);
