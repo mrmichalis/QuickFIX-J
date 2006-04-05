@@ -19,45 +19,46 @@
 
 package quickfix.mina.initiator;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 
-import org.apache.mina.io.socket.SocketConnector;
-import org.apache.mina.protocol.ProtocolConnector;
-import org.apache.mina.protocol.ProtocolProvider;
-import org.apache.mina.protocol.ProtocolSession;
-import org.apache.mina.protocol.io.IoProtocolConnector;
+import org.apache.mina.common.ConnectFuture;
+import org.apache.mina.common.IoConnector;
+import org.apache.mina.common.IoHandler;
 
 import quickfix.Session;
 import quickfix.SystemTime;
+import quickfix.mina.EventHandlingStrategy;
+import quickfix.mina.NetworkingOptions;
+import quickfix.mina.ProtocolFactory;
 import edu.emory.mathcs.backport.java.util.concurrent.Future;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 
-class ProtocolSessionInitiator {
+class IoSessionInitiator {
 
-    private final ProtocolProvider protocolProvider;
     private final long reconnectIntervalInMillis;
     private final SocketAddress[] socketAddresses;
 
-    private final ProtocolConnector protocolConnector;
-    private ProtocolSession protocolSession;
+    private final IoHandler ioHandler;
+    private ConnectFuture ioConnectFuture;
     private long lastReconnectAttemptTime = 0;
     private int nextSocketAddressIndex = 0;
     private Future reconnectFuture;
     private Session quickfixSession;
 
-    public ProtocolSessionInitiator(Session qfSession, ProtocolProvider protocolProvider,
+    public IoSessionInitiator(Session qfSession,
             SocketAddress[] socketAddresses, long reconnectIntervalInSeconds,
-            ScheduledExecutorService executor) {
+            ScheduledExecutorService executor, NetworkingOptions networkingOptions,
+            EventHandlingStrategy eventHandlingStrategy) {
 
         if (socketAddresses.length == 0) {
             throw new IllegalArgumentException("socketAddresses must not be empty");
         }
         this.quickfixSession = qfSession;
-        this.protocolProvider = protocolProvider;
         this.socketAddresses = socketAddresses;
         this.reconnectIntervalInMillis = reconnectIntervalInSeconds * 1000L;
-        this.protocolConnector = new IoProtocolConnector(new SocketConnector());
+        ioHandler =  new InitiatorIoHandler(qfSession, networkingOptions, eventHandlingStrategy);
         reconnectFuture = executor.scheduleWithFixedDelay(new ReconnectTask(), 1, 1,
                 TimeUnit.SECONDS);
     }
@@ -73,18 +74,21 @@ class ProtocolSessionInitiator {
     public synchronized void connect() {
         lastReconnectAttemptTime = SystemTime.currentTimeMillis();
         try {
-            protocolSession = protocolConnector.connect(getNextSocketAddress(), protocolProvider);
+            IoConnector ioConnector = ProtocolFactory.createIoConnector(getNextSocketAddress());
+            ioConnectFuture = ioConnector.connect(getNextSocketAddress(), ioHandler);
         } catch (Throwable e) {
+            e.printStackTrace(); // TODO @@@@DEBUG
             quickfixSession.getLog().onEvent("Connection failed: " + e.getMessage());
         }
     }
 
-    public void close() {
+    public void close() throws IOException {
         if (reconnectFuture != null) {
             reconnectFuture.cancel(true);
         }
-        if (protocolSession != null) {
-            protocolSession.close();
+        if (ioConnectFuture != null) {
+            ioConnectFuture.join();
+            ioConnectFuture.getSession().close();
         }
         nextSocketAddressIndex = 0;
     }
@@ -98,7 +102,7 @@ class ProtocolSessionInitiator {
     }
 
     private boolean shouldReconnect() {
-        return (protocolSession == null || !protocolSession.isConnected()) && isTimeForReconnect()
+        return (ioConnectFuture == null || !ioConnectFuture.isConnected()) && isTimeForReconnect()
                 && (quickfixSession.isEnabled() && quickfixSession.isSessionTime());
     }
 

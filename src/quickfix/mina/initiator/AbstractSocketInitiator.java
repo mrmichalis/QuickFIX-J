@@ -19,14 +19,12 @@
 
 package quickfix.mina.initiator;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.mina.protocol.ProtocolProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +42,7 @@ import quickfix.SessionID;
 import quickfix.SessionSettings;
 import quickfix.mina.EventHandlingStrategy;
 import quickfix.mina.NetworkingOptions;
+import quickfix.mina.ProtocolFactory;
 import quickfix.mina.SessionConnector;
 
 public abstract class AbstractSocketInitiator extends SessionConnector implements Initiator {
@@ -77,12 +76,10 @@ public abstract class AbstractSocketInitiator extends SessionConnector implement
                 SocketAddress[] socketAddresses = getSocketAddresses(sessionID);
                 NetworkingOptions networkingOptions = new NetworkingOptions(getSettings()
                         .getSessionProperties(sessionID));
-                ProtocolProvider protocolProvider = new InitiatorProtocolProvider(quickfixSession,
+                IoSessionInitiator ioSessionInitiator = new IoSessionInitiator(quickfixSession,
+                        socketAddresses, reconnectingInterval, getScheduledExecutorService(),
                         networkingOptions, eventHandlingStrategy);
-                ProtocolSessionInitiator protocolSessionInitiator = new ProtocolSessionInitiator(
-                        quickfixSession, protocolProvider, socketAddresses, reconnectingInterval,
-                        getScheduledExecutorService());
-                protocolSessionInitiator.connect();
+                ioSessionInitiator.connect();
             }
             startSessionTimer();
         } catch (FieldConvertError e) {
@@ -139,15 +136,21 @@ public abstract class AbstractSocketInitiator extends SessionConnector implement
         ArrayList addresses = new ArrayList();
         for (int index = 0;; index++) {
             try {
+                String protocolKey = Initiator.SETTING_SOCKET_CONNECT_PROTOCOL
+                        + (index == 0 ? "" : Integer.toString(index));
                 String hostKey = Initiator.SETTING_SOCKET_CONNECT_HOST
                         + (index == 0 ? "" : Integer.toString(index));
                 String portKey = Initiator.SETTING_SOCKET_CONNECT_PORT
                         + (index == 0 ? "" : Integer.toString(index));
+                String protocol = "tcp";
+                if (settings.isSetting(sessionID, protocolKey)) {
+                    protocol = settings.getString(sessionID, protocolKey);
+                }
                 if (settings.isSetting(sessionID, hostKey)
                         && settings.isSetting(sessionID, portKey)) {
                     String host = settings.getString(sessionID, hostKey);
                     int port = (int) settings.getLong(sessionID, portKey);
-                    addresses.add(new InetSocketAddress(host, port));
+                    addresses.add(ProtocolFactory.createSocketAddress(protocol, host, port));
                 } else {
                     break;
                 }
