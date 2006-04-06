@@ -22,9 +22,11 @@ package quickfix.mina.initiator;
 import java.io.IOException;
 import java.net.SocketAddress;
 
+import org.apache.mina.common.CloseFuture;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandler;
+import org.apache.mina.common.IoSession;
 
 import quickfix.Session;
 import quickfix.SystemTime;
@@ -41,7 +43,7 @@ class IoSessionInitiator {
     private final SocketAddress[] socketAddresses;
 
     private final IoHandler ioHandler;
-    private ConnectFuture ioConnectFuture;
+    private IoSession ioSession;
     private long lastReconnectAttemptTime = 0;
     private int nextSocketAddressIndex = 0;
     private Future reconnectFuture;
@@ -75,9 +77,10 @@ class IoSessionInitiator {
         lastReconnectAttemptTime = SystemTime.currentTimeMillis();
         try {
             IoConnector ioConnector = ProtocolFactory.createIoConnector(getNextSocketAddress());
-            ioConnectFuture = ioConnector.connect(getNextSocketAddress(), ioHandler);
+            ConnectFuture connectFuture = ioConnector.connect(getNextSocketAddress(), ioHandler);
+            connectFuture.join();
+            ioSession = connectFuture.getSession();
         } catch (Throwable e) {
-            e.printStackTrace(); // TODO @@@@DEBUG
             quickfixSession.getLog().onEvent("Connection failed: " + e.getMessage());
         }
     }
@@ -86,9 +89,10 @@ class IoSessionInitiator {
         if (reconnectFuture != null) {
             reconnectFuture.cancel(true);
         }
-        if (ioConnectFuture != null) {
-            ioConnectFuture.join();
-            ioConnectFuture.getSession().close();
+        if (ioSession != null) {
+            CloseFuture closeFuture = ioSession.close();
+            closeFuture.join();
+            ioSession = null;
         }
         nextSocketAddressIndex = 0;
     }
@@ -102,7 +106,7 @@ class IoSessionInitiator {
     }
 
     private boolean shouldReconnect() {
-        return (ioConnectFuture == null || !ioConnectFuture.isConnected()) && isTimeForReconnect()
+        return (ioSession == null || !ioSession.isConnected()) && isTimeForReconnect()
                 && (quickfixSession.isEnabled() && quickfixSession.isSessionTime());
     }
 

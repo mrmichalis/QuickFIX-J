@@ -153,6 +153,10 @@ public abstract class SessionConnector {
                 }
             }
         }
+        
+        if (!forceDisconnect) {
+            waitForLogout();
+        }
     }
 
     protected void waitForLogout() {
@@ -227,7 +231,7 @@ public abstract class SessionConnector {
     private static class QFTimerThreadFactory implements ThreadFactory {
 
         public Thread newThread(Runnable runnable) {
-            return new Thread(runnable, "QF/J Timer");
+            return new Thread(runnable, "QFJ Timer");
         }
 
     }

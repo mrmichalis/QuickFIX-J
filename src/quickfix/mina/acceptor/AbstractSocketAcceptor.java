@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.mina.common.IoAcceptor;
+import org.apache.mina.common.TransportType;
 
 import quickfix.Acceptor;
 import quickfix.Application;
@@ -82,9 +83,15 @@ public abstract class AbstractSocketAcceptor extends SessionConnector implements
 
             SessionSettings settings = getSettings();
 
-            String acceptProtocol = "tcp";
+            TransportType acceptTransportType = TransportType.SOCKET;
             if (settings.isSetting(Acceptor.SETTING_SOCKET_ACCEPT_PROTOCOL)) {
-                acceptProtocol = settings.getString(Acceptor.SETTING_SOCKET_ACCEPT_PROTOCOL);
+                try {
+                    acceptTransportType = 
+                        TransportType.getInstance(settings.getString(Acceptor.SETTING_SOCKET_ACCEPT_PROTOCOL));
+                } catch (IllegalArgumentException e) {
+                    // Unknown transport type
+                    throw new ConfigError(e);
+                }
             }
 
             int acceptPort = getIntSetting(Acceptor.SETTING_SOCKET_ACCEPT_PORT);
@@ -93,7 +100,7 @@ public abstract class AbstractSocketAcceptor extends SessionConnector implements
                 acceptHost = settings.getString(SETTING_SOCKET_ACCEPT_ADDRESS);
             }
 
-            acceptorSocketAddress = ProtocolFactory.createSocketAddress(acceptProtocol, acceptHost,
+            acceptorSocketAddress = ProtocolFactory.createSocketAddress(acceptTransportType, acceptHost,
                     acceptPort);
 
             ioAcceptor = ProtocolFactory.createIoAcceptor(acceptorSocketAddress);

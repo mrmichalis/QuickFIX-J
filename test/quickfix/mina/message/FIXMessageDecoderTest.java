@@ -50,7 +50,6 @@ public class FIXMessageDecoderTest extends TestCase {
     private void doSplitMessageTest(int splitOffset, String data) throws ProtocolCodecException {
         String firstChunk = data.substring(0, splitOffset);
         String remaining = data.substring(splitOffset);
-        //System.out.println("@@@@@ " + splitOffset + " " + firstChunk + "  " + remaining);
         buffer.put(firstChunk.getBytes());
         buffer.flip();
         decoderOutput.reset();

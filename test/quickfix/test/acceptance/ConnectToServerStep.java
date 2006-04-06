@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import junit.framework.Assert;
 import junit.framework.TestResult;
 
+import org.apache.mina.common.TransportType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +16,15 @@ public class ConnectToServerStep implements TestStep {
     private static final Pattern CONNECT_PATTERN = Pattern.compile("i(\\d+)*,?CONNECT");
     private String command;
     private int clientId = 0;
+    private TransportType transportType = TransportType.SOCKET;
+    private final int port;
 
-    public ConnectToServerStep(String data) {
-        this.command = data;
+    public ConnectToServerStep(String command, TransportType transportType, int port) {
+        this.command = command;
+        this.transportType = transportType;
+        this.port = port;
     }
-
+    
     public void run(TestResult result, TestConnection connection) {
         Matcher matcher = CONNECT_PATTERN.matcher(command);
         if (matcher.lookingAt()) {
@@ -41,7 +46,7 @@ public class ConnectToServerStep implements TestStep {
             }
         }
         try {
-            connection.connect(clientId);
+            connection.connect(clientId, transportType, port);
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }

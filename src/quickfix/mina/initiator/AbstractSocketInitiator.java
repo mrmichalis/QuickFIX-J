@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.mina.common.TransportType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,15 +143,21 @@ public abstract class AbstractSocketInitiator extends SessionConnector implement
                         + (index == 0 ? "" : Integer.toString(index));
                 String portKey = Initiator.SETTING_SOCKET_CONNECT_PORT
                         + (index == 0 ? "" : Integer.toString(index));
-                String protocol = "tcp";
+                TransportType transportType = TransportType.SOCKET;
                 if (settings.isSetting(sessionID, protocolKey)) {
-                    protocol = settings.getString(sessionID, protocolKey);
+                    try {
+                        transportType = TransportType.getInstance(settings.getString(sessionID,
+                                protocolKey));
+                    } catch (IllegalArgumentException e) {
+                        // Unknown transport type
+                        throw new ConfigError(e);
+                    }
                 }
                 if (settings.isSetting(sessionID, hostKey)
                         && settings.isSetting(sessionID, portKey)) {
                     String host = settings.getString(sessionID, hostKey);
                     int port = (int) settings.getLong(sessionID, portKey);
-                    addresses.add(ProtocolFactory.createSocketAddress(protocol, host, port));
+                    addresses.add(ProtocolFactory.createSocketAddress(transportType, host, port));
                 } else {
                     break;
                 }

@@ -14,6 +14,7 @@ import java.net.SocketAddress;
 
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.IoConnector;
+import org.apache.mina.common.TransportType;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
@@ -23,17 +24,15 @@ import org.apache.mina.transport.vmpipe.VmPipeConnector;
 import quickfix.ConfigError;
 
 public class ProtocolFactory {
-    public static final String TCP_PROTOCOL = "tcp";
-    public static final String VM_PROTOCOL = "vm";
 
-    public static SocketAddress createSocketAddress(String protocol, String host, int port)
+    public static SocketAddress createSocketAddress(TransportType transportType, String host, int port)
             throws ConfigError {
-        if (TCP_PROTOCOL.equals(protocol)) {
+        if (transportType == TransportType.SOCKET) {
             return host != null ? new InetSocketAddress(host, port) : new InetSocketAddress(port);
-        } else if (VM_PROTOCOL.equals(protocol)) {
+        } else if (transportType == TransportType.VM_PIPE) {
             return new VmPipeAddress(port);
         } else {
-            throw new ConfigError("Unknown session connection protocol: " + protocol);
+            throw new ConfigError("Unknown session transport type: " + transportType);
         }
     }
 
