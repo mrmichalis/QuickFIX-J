@@ -33,7 +33,7 @@ import junit.framework.TestCase;
 
 public class SerializationTest extends TestCase {
 
-    private String[] srcDirs = new String[] { "src-generated", "output/ant/src-generated" };
+    private String[] srcDirs = new String[] { "src-generated", "core/target/src-generated" };
     private String srcDir;
     public SerializationTest(String name) {
         super(name);
