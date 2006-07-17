@@ -95,9 +95,9 @@ public class JdbcLogTest extends TestCase {
 
     private void initializeTableDefinitions(Connection connection) throws ConfigError {
         try {
-            JdbcTestSupport.loadSQL(connection, "etc/sql/mysql/messages_log_table.sql",
+            JdbcTestSupport.loadSQL(connection, "core/src/main/config/sql/mysql/messages_log_table.sql",
                     new JdbcTestSupport.HypersonicPreprocessor(null));
-            JdbcTestSupport.loadSQL(connection, "etc/sql/mysql/event_log_table.sql",
+            JdbcTestSupport.loadSQL(connection, "core/src/main/config/sql/mysql/event_log_table.sql",
                     new JdbcTestSupport.HypersonicPreprocessor(null));
         } catch (Exception e) {
             throw new ConfigError(e);

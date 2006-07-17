@@ -105,14 +105,13 @@ public class TimerTestClient extends MessageCracker implements Application {
         defaults.put("EndTime", "00:00:00");
         defaults.put("SenderCompID", "TW");
         defaults.put("TargetCompID", "ISLD");
-        defaults.put("FileStorePath", "output/data/client");
+        defaults.put("FileStorePath", "core/target/data/timer_test");
         defaults.put("ValidateUserDefinedFields", "Y");
         settings.set(defaults);
 
         SessionID sessionID = new SessionID(FixVersions.BEGINSTRING_FIX44, "TW", "ISLD");
         settings.setString(sessionID, "BeginString", FixVersions.BEGINSTRING_FIX44);
-        settings.setString(sessionID, "DataDictionary", "etc/"
-                + FixVersions.BEGINSTRING_FIX44.replaceAll("\\.", "") + ".xml");
+        settings.setString(sessionID, "DataDictionary", "FIX44.xml");
 
         MessageStoreFactory storeFactory = new MemoryStoreFactory();
         Initiator initiator = new SocketInitiator(this, storeFactory, settings,

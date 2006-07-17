@@ -26,16 +26,8 @@ import quickfix.SessionNotFound;
 public class TimerTest extends TestCase {
     private Thread serverThread;
 
-    public void testAcceptorTimer() {
-        try {
-            new TimerTestClient().run();
-        } catch (ConfigError configError) {
-            fail(configError.getMessage());
-        } catch (SessionNotFound sessionNotFound) {
-            fail(sessionNotFound.getMessage());
-        } catch (InterruptedException e) {
-            fail(e.getMessage());
-        }
+    public void testAcceptorTimer() throws ConfigError, SessionNotFound, InterruptedException {
+        new TimerTestClient().run();
     }
 
     protected void setUp() throws Exception {

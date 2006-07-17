@@ -93,9 +93,9 @@ public class JdbcStoreTest extends AbstractMessageStoreTest {
         Connection connection = null;
         try {
             connection = getDataSource().getConnection();
-            JdbcTestSupport.loadSQL(connection, "etc/sql/mysql/messages_table.sql",
+            JdbcTestSupport.loadSQL(connection, "core/src/main/config/sql/mysql/messages_table.sql",
                     new JdbcTestSupport.HypersonicPreprocessor(messagesTableName));
-            JdbcTestSupport.loadSQL(connection, "etc/sql/mysql/sessions_table.sql",
+            JdbcTestSupport.loadSQL(connection, "core/src/main/config/sql/mysql/sessions_table.sql",
                     new JdbcTestSupport.HypersonicPreprocessor(sessionsTableName));
         } finally {
             JdbcUtil.close(null, connection);

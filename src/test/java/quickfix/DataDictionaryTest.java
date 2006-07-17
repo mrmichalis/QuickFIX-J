@@ -149,7 +149,7 @@ public class DataDictionaryTest extends TestCase {
     // named 'url'. QFJ string argument can be either but this test
     // ensures the DD works correctly with a regular file path.
     public void testDictionaryWithFilename() throws Exception {
-        DataDictionary dd = new DataDictionary("etc/FIX40.xml");
+        DataDictionary dd = new DataDictionary("FIX40.xml");
         assertEquals("wrong field name", "Currency", dd.getFieldName(15));
         // It worked!
     }

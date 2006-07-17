@@ -27,7 +27,7 @@ import quickfix.test.acceptance.timer.TimerTest;
 
 public class AcceptanceTestSuite extends TestSuite {
     private static Logger log = LoggerFactory.getLogger(AcceptanceTestSuite.class);
-    private String acceptanceTestBaseDir = "test/quickfix/test/acceptance/definitions/";
+    private String acceptanceTestBaseDir = "core/src/test/java/quickfix/test/acceptance/definitions/";
     private boolean skipSlowTests;
     private static TransportType transportType = TransportType.SOCKET;
     private static int port = 9887;
@@ -40,7 +40,7 @@ public class AcceptanceTestSuite extends TestSuite {
         }
     }
 
-    public static class AcceptanceTest extends TestCase {
+    static class AcceptanceTest extends TestCase {
         private final String filename;
         private final String testname;
 

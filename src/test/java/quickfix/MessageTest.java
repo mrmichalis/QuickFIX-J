@@ -246,7 +246,7 @@ public class MessageTest extends TestCase {
         String expectedMessageString = "8=FIX.4.49=17135=D49=SenderCompId56=TargetCompId11=183339"
                 + "22=838=140=244=1248=BHP54=255=BHP59=160=20060223-22:38:33526=3620453=2448=8"
                 + "447=D452=4448=AAA35354447=D452=310=168";
-        DataDictionary dataDictionary = new DataDictionary("etc/FIX44.xml");
+        DataDictionary dataDictionary = new DataDictionary("FIX44.xml");
         Message message = new DefaultMessageFactory().create(dataDictionary.getVersion(), "D");
         message.fromString(expectedMessageString, dataDictionary, false);
         String actualMessageString = message.toString();

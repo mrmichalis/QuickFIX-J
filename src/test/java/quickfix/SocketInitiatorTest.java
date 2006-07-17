@@ -115,12 +115,11 @@ public class SocketInitiatorTest extends TestCase {
         defaults.put("EndTime", "00:00:00");
         defaults.put("HeartBtInt", "30");
         defaults.put("ReconnectInterval", "2");
-        defaults.put("FileStorePath", "output/data/client");
+        defaults.put("FileStorePath", "core/target/data/client");
         defaults.put("ValidateUserDefinedFields", "Y");
         settings.set(defaults);
         settings.setString(clientSessionID, "BeginString", FixVersions.BEGINSTRING_FIX42);
-        settings.setString(clientSessionID, "DataDictionary", "etc/"
-                + FixVersions.BEGINSTRING_FIX42.replaceAll("\\.", "") + ".xml");
+        settings.setString(clientSessionID, "DataDictionary", "FIX42.xml");
         return settings;
     }
 

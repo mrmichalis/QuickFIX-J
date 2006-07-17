@@ -41,7 +41,7 @@ public class MySQLLogTest extends TestCase {
         SessionID sessionID = new SessionID("FIX.4.2", "SENDER" + System.currentTimeMillis(),
                 "TARGET" + System.currentTimeMillis(), "X");
 
-        SessionSettings settings = new SessionSettings("test/test.cfg");
+        SessionSettings settings = new SessionSettings("core/src/test/java/test.cfg");
         settings.setString(sessionID, "BeginString", sessionID.getBeginString());
         settings.setString(sessionID, "SenderCompID", sessionID.getSenderCompID());
         settings.setString(sessionID, "TargetCompID", sessionID.getTargetCompID());
@@ -103,6 +103,6 @@ public class MySQLLogTest extends TestCase {
     }
 
     protected String getConfigurationFileName() {
-        return "test/test.cfg";
+        return "core/src/test/java/test.cfg";
     }
 }
