@@ -8,17 +8,17 @@
 	<property name="example.src.dir" value="examples" />
 	<property name="product.classes.dir"
 	          value="${ant.output.dir}/classes/product" />
-	<property name="product.src.dir" value="src" />
+	<property name="product.src.dir" value="core/src/main/java" />
 	<property name="product.generated.src.dir"
 	          value="${ant.output.dir}/src-generated" />
-	<property name="eclipse.generated.src.dir" value="src-generated" />
-	<property name="specs.dir" value="etc" />
-	<property name="xsl.dir" value="src/quickfix/codegen" />
+	<property name="eclipse.generated.src.dir" value="core/target/src-generated" />
+	<property name="specs.dir" value="core/src/main/resources" />
+	<property name="xsl.dir" value="core/src/main/java/quickfix/codegen" />
 	<property name="etc.dir" value="etc" />
 	<property name="bin.dir" value="bin" />
-	<property name="core.lib.dir" value="lib" />
-	<property name="test.lib.dir" value="lib/test" />
-	<property name="optional.lib.dir" value="lib/optional" />
+	<property name="core.lib.dir" value="core/src/main/lib" />
+	<property name="test.lib.dir" value="core/src/test/lib" />
+	<property name="optional.lib.dir" value="${core.lib.directory}/optional" />
 	<property name="javac.debug" value="on" />
 	<property name="javac.args" value=""/> <!-- used in CruiseControl -->
 	<property name="quickfixj.jar" value="quickfixj.jar" />
