@@ -175,7 +175,6 @@ public abstract class AbstractSocketAcceptor extends SessionConnector implements
             SocketAddress acceptorSocketAddress = (SocketAddress) entry.getKey();
             log.info("No longer accepting connections on " + acceptorSocketAddress);
             IoAcceptor ioAcceptor = getIoAcceptor(acceptorSocketAddress);
-            System.out.println("@@@@@ DEBUG AbstractSocketAcceptor.stopAcceptingConnections isbound "+ioAcceptor.isBound(acceptorSocketAddress));
             ioAcceptor.unbind(acceptorSocketAddress);
         }
         ioAcceptorForTransport.clear();

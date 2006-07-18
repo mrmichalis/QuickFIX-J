@@ -1601,7 +1601,7 @@ public class Session {
 
     /**
      * Sets the timeout for waiting for a logon response.
-     * @param timeout in seconds
+     * @param seconds the timeout in seconds
      */
     public void setLogonTimeout(int seconds) {
         state.setLogonTimeout(seconds);
@@ -1609,7 +1609,7 @@ public class Session {
 
     /**
      * Sets the timeout for waiting for a logout response.
-     * @param timeout in seconds
+     * @param seconds the timeout in seconds
      */
     public void setLogoutTimeout(int seconds) {
         state.setLogoutTimeout(seconds);
