@@ -82,7 +82,7 @@
 		<sequential>
 			<mkdir dir="@{output}" />
 			<javac destdir="@{output}" debug="@{javac.debug}" memoryMaximumSize="128m" fork="yes">
-				<compilerarg line="@{javac.args}" />
+				<compilerarg line="${javac.args}" />
 				<classpath refid="@{classpathref}"/>
 				<src refid="@{srcref}" />
 			</javac>
@@ -327,7 +327,7 @@
 			<arg value="${main.src.dir}/quickfix/codegen" />
 			<arg value="${target.generated.src.dir}" />
 			<classpath>
-				<pathelement location="${target.classes.dir}" />
+				<pathelement location="${main.classes.dir}" />
 				<path refid="main.lib.classpath" />
 			</classpath>
 		</java>
