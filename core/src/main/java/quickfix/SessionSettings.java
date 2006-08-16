@@ -17,7 +17,6 @@
  * are not clear to you.
  ******************************************************************************/
 
-
 package quickfix;
 
 import java.io.FileInputStream;
@@ -68,7 +67,7 @@ public class SessionSettings {
     private static final String NEWLINE = "\r\n";
 
     private Properties variableValues = System.getProperties();
-    
+
     /**
      * Creates an empty session settings object.
      */
@@ -136,7 +135,7 @@ public class SessionSettings {
     public String getString(SessionID sessionID, String key) throws ConfigError, FieldConvertError {
         String value = interpolate(getSessionProperties(sessionID).getProperty(key));
         if (value == null) {
-            throw new ConfigError(key + " not defined");
+            throw new ConfigError(key  + " setting not found.");
         }
         return value;
     }
@@ -152,7 +151,7 @@ public class SessionSettings {
     public Properties getSessionProperties(SessionID sessionID) throws ConfigError {
         Properties p = (Properties) sections.get(sessionID);
         if (p == null) {
-            throw new ConfigError("Session not found");
+            throw new ConfigError("Session not found: " + sessionID);
         }
         return p;
     }
@@ -378,10 +377,16 @@ public class SessionSettings {
 
     private void storeSection(String currentSectionId, Properties currentSection) {
         if (currentSectionId != null && currentSectionId.equals(SESSION_SECTION_NAME)) {
-            SessionID sessionId = new SessionID(currentSection.getProperty("BeginString"),
-                    currentSection.getProperty("SenderCompID"), currentSection
-                            .getProperty("TargetCompID"), currentSection.getProperty(
-                            "SessionQualifier", ""));
+            final String beginString = currentSection.getProperty("BeginString");
+            final String senderCompID = currentSection.getProperty("SenderCompID");
+            final String senderSubID = currentSection.getProperty("SenderSubID", "");
+            final String senderLocationID = currentSection.getProperty("SenderLocationID", "");
+            final String targetCompID = currentSection.getProperty("TargetCompID");
+            final String targetSubID = currentSection.getProperty("TargetSubID", "");
+            final String targetLocationID = currentSection.getProperty("TargetLocationID", "");
+            final String sessionQualifier = currentSection.getProperty("SessionQualifier", "");
+            SessionID sessionId = new SessionID(beginString, senderCompID, senderSubID,
+                    senderLocationID, targetCompID, targetSubID, targetLocationID, sessionQualifier);
             sections.put(sessionId, currentSection);
             currentSectionId = null;
             currentSection = null;
@@ -519,7 +524,7 @@ public class SessionSettings {
     }
 
     private Pattern variablePattern = Pattern.compile("\\$\\{(.+?)}");
-    
+
     private String interpolate(String value) {
         if (value == null || value.indexOf('$') == -1) {
             return value;
@@ -527,7 +532,7 @@ public class SessionSettings {
         StringBuffer buffer = new StringBuffer();
         Matcher m = variablePattern.matcher(value);
         while (m.find()) {
-            if (m.start() > 0 && value.charAt(m.start()-1) == '\\') {
+            if (m.start() > 0 && value.charAt(m.start() - 1) == '\\') {
                 continue;
             }
             String variable = m.group(1);
@@ -539,7 +544,7 @@ public class SessionSettings {
         m.appendTail(buffer);
         return buffer.toString();
     }
-    
+
     /**
      * Set properties that will be the source of variable values in the settings. A variable
      * is of the form ${variable} and will be replaced with values from the
@@ -571,7 +576,7 @@ public class SessionSettings {
     public void setVariableValues(Properties variableValues) {
         this.variableValues = variableValues;
     }
-    
+
     /**
      * Adds defaults to the settings. Will not delete existing settings not
      * overlapping with the new defaults, but will overwrite existing settings

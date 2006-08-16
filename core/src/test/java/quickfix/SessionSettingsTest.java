@@ -39,6 +39,7 @@ public class SessionSettingsTest extends TestCase {
         SessionID sessionID1 = new SessionID("FIX.4.2", "TW", "CLIENT1");
         SessionID sessionID2 = new SessionID("FIX.4.2", "TW", "CLIENT2");
         SessionID sessionID3 = new SessionID("FIX.4.2", "FOO", "BAR");
+        SessionID sessionID4 = new SessionID("FIX.4.4:TW/TWSUB->CLIENT2/CLIENT2SUB/CLIENT2LOC");
 
         assertEquals("wrong setting", "acceptor", settings.getString(sessionID1,
                 SessionFactory.SETTING_CONNECTION_TYPE));
@@ -48,6 +49,8 @@ public class SessionSettingsTest extends TestCase {
                 SessionSettings.TARGETCOMPID));
         assertEquals("wrong setting", "CLIENT2", settings.getString(sessionID2,
                 SessionSettings.TARGETCOMPID));
+        assertEquals("wrong setting", "FIX.4.4", settings.getString(sessionID4,
+                "BeginString"));
 
         try {
             settings.getString(new SessionID("FIX.4.2", "FOO", "BAR"), "xyz");
@@ -90,6 +93,7 @@ public class SessionSettingsTest extends TestCase {
         assertNotNull(sectionIterator.next());
         assertNotNull(sectionIterator.next());
         assertNotNull(sectionIterator.next());
+        assertNotNull(sectionIterator.next());
         assertFalse(sectionIterator.hasNext());
     }
 
@@ -119,6 +123,15 @@ public class SessionSettingsTest extends TestCase {
         data += "SenderCompID=TW\n";
         data += "TargetCompID=CLIENT1\n";
         data += "DataDictionary=../spec/FIX42.xml\n";
+        data += "\n";
+        data += "[SESSION]\n";
+        data += "BeginString=FIX.4.4\n";
+        data += "SenderCompID=TW\n";
+        data += "SenderSubID=TWSUB\n";
+        data += "TargetCompID=CLIENT2\n";
+        data += "TargetSubID=CLIENT2SUB\n";
+        data += "TargetLocationID=CLIENT2LOC\n";
+        data += "DataDictionary=FIX44.xml\n";
         data += "\n";
         data += "[SESSION]\n";
         data += "BeginString=FIX.4.2\n";

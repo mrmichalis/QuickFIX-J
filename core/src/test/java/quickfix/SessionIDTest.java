@@ -40,6 +40,26 @@ public class SessionIDTest extends TestCase {
         assertEquals("", sessionID.getSessionQualifier());
     }
 
+    public void testFromStringWithSubIdsAndLocations() throws Exception {
+        SessionID sessionID = new SessionID("FIX.4.2:SENDER/SUB->TARGET/TSUB/LOCATION");
+        assertEquals("FIX.4.2", sessionID.getBeginString());
+        assertEquals("SENDER", sessionID.getSenderCompID());
+        assertEquals("SUB", sessionID.getSenderSubID());
+        assertEquals("", sessionID.getSenderLocationID());
+        assertEquals("TARGET", sessionID.getTargetCompID());
+        assertEquals("TSUB", sessionID.getTargetSubID());
+        assertEquals("LOCATION", sessionID.getTargetLocationID());
+    }
+    
+    public void testFromEqualsAndHashcode() throws Exception {
+        SessionID sessionID1 = new SessionID("FIX.4.2:SENDER/SUB->TARGET/TSUB/LOCATION");
+        SessionID sessionID2 = new SessionID("FIX.4.2:SENDER/SUB->TARGET/TSUB/LOCATION");
+        SessionID sessionID3 = new SessionID("FIX.4.2:X/SUB/->Y//:Q");
+        assertTrue(sessionID1.equals(sessionID2) && sessionID2.equals(sessionID1));
+        assertTrue(sessionID1.hashCode() == sessionID2.hashCode());
+        assertTrue(!sessionID1.equals(sessionID3) && !sessionID3.equals(sessionID1));
+    }
+
     public void testFromStringError1() throws Exception {
         SessionID sessionID = new SessionID(null, null, null);
         try {
@@ -60,7 +80,7 @@ public class SessionIDTest extends TestCase {
         }
     }
 
-    public void testFromStringError3() throws Exception {
+    public void testFromStringEmptyQualifier() throws Exception {
         SessionID sessionID = new SessionID(null, null, null);
         sessionID.fromString("FIX.4.2:SENDER->TARGET:");
         assertEquals("FIX.4.2", sessionID.getBeginString());

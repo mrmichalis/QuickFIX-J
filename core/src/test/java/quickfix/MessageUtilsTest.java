@@ -20,15 +20,14 @@
 package quickfix;
 
 import junit.framework.TestCase;
-import quickfix.DefaultMessageFactory;
-import quickfix.InvalidMessage;
-import quickfix.Message;
-import quickfix.MessageUtils;
-import quickfix.SessionID;
 import quickfix.field.BeginString;
 import quickfix.field.MsgType;
 import quickfix.field.SenderCompID;
+import quickfix.field.SenderLocationID;
+import quickfix.field.SenderSubID;
 import quickfix.field.TargetCompID;
+import quickfix.field.TargetLocationID;
+import quickfix.field.TargetSubID;
 import quickfix.fix40.Logon;
 
 public class MessageUtilsTest extends TestCase {
@@ -41,47 +40,77 @@ public class MessageUtilsTest extends TestCase {
     }
 
     public void testSessionIdFromMessage() throws Exception {
-        Message message = new Logon();
-        message.getHeader().setString(SenderCompID.FIELD, "TW");
-        message.getHeader().setString(TargetCompID.FIELD, "ISLD");
+        Message message = setUpMessageWithSessionID();
+        SessionID sessionID = MessageUtils.getSessionID(message);
+        assertEquals("TW", sessionID.getSenderCompID());
+        assertEquals("SSUB", sessionID.getSenderSubID());
+        assertEquals("SLOC", sessionID.getSenderLocationID());
+        assertEquals("ISLD", sessionID.getTargetCompID());
+        assertEquals("TSUB", sessionID.getTargetSubID());
+        assertEquals("TLOC", sessionID.getTargetLocationID());
+    }
+
+    public void testExtendedSessionIdFromMessage() throws Exception {
+        Message message = setUpMessageWithSessionID();
         SessionID sessionID = MessageUtils.getSessionID(message);
         assertEquals(sessionID.getBeginString(), "FIX.4.0");
         assertEquals("TW", sessionID.getSenderCompID());
+        assertEquals("SSUB", sessionID.getSenderSubID());
+        assertEquals("SLOC", sessionID.getSenderLocationID());
         assertEquals("ISLD", sessionID.getTargetCompID());
+        assertEquals("TSUB", sessionID.getTargetSubID());
+        assertEquals("TLOC", sessionID.getTargetLocationID());
+    }
+
+    private Message setUpMessageWithSessionID() {
+        Message message = new Logon();
+        message.getHeader().setString(SenderCompID.FIELD, "TW");
+        message.getHeader().setString(SenderSubID.FIELD, "SSUB");
+        message.getHeader().setString(SenderLocationID.FIELD, "SLOC");
+        message.getHeader().setString(TargetCompID.FIELD, "ISLD");
+        message.getHeader().setString(TargetSubID.FIELD, "TSUB");
+        message.getHeader().setString(TargetLocationID.FIELD, "TLOC");
+        return message;
     }
 
     public void testReverseSessionIdFromMessage() throws Exception {
-        Message message = new Logon();
-        message.getHeader().setString(SenderCompID.FIELD, "TW");
-        message.getHeader().setString(TargetCompID.FIELD, "ISLD");
+        Message message = setUpMessageWithSessionID();
         SessionID sessionID = MessageUtils.getReverseSessionID(message);
         assertEquals(sessionID.getBeginString(), "FIX.4.0");
         assertEquals("ISLD", sessionID.getSenderCompID());
+        assertEquals("TSUB", sessionID.getSenderSubID());
+        assertEquals("TLOC", sessionID.getSenderLocationID());
         assertEquals("TW", sessionID.getTargetCompID());
+        assertEquals("SSUB", sessionID.getTargetSubID());
+        assertEquals("SLOC", sessionID.getTargetLocationID());
     }
     
     public void testReverseSessionIdFromMessageWithMissingFields() throws Exception {
         Message message = new Logon();
         SessionID sessionID = MessageUtils.getReverseSessionID(message);
         assertEquals(sessionID.getBeginString(), "FIX.4.0");
-        assertNull(sessionID.getSenderCompID());
-        assertNull(sessionID.getTargetCompID());
+        assertEquals("", sessionID.getSenderCompID());
+        assertEquals("", sessionID.getTargetCompID());
     }
 
     public void testSessionIdFromRawMessage() throws Exception {
-        String messageString = "8=FIX.4.09=5635=A34=149=TW52=20060118-16:34:1956=ISLD98=0108=210=223";
+        String messageString = "8=FIX.4.09=5635=A34=149=TW50=TWSUB142=TWLOC52=20060118-16:34:1956=ISLD98=0108=210=223";
         SessionID sessionID = MessageUtils.getSessionID(messageString);
         assertEquals(sessionID.getBeginString(), "FIX.4.0");
         assertEquals("TW", sessionID.getSenderCompID());
+        assertEquals("TWSUB", sessionID.getSenderSubID());
+        assertEquals("TWLOC", sessionID.getSenderLocationID());
         assertEquals("ISLD", sessionID.getTargetCompID());
     }
 
     public void testReverseSessionIdFromRawMessage() throws Exception {
-        String messageString = "8=FIX.4.09=5635=A34=149=TW52=20060118-16:34:1956=ISLD98=0108=210=223";
+        String messageString = "8=FIX.4.09=5635=A34=149=TW50=TWSUB142=TWLOC52=20060118-16:34:1956=ISLD98=0108=210=223";
         SessionID sessionID = MessageUtils.getReverseSessionID(messageString);
         assertEquals(sessionID.getBeginString(), "FIX.4.0");
-        assertEquals("ISLD", sessionID.getSenderCompID());
         assertEquals("TW", sessionID.getTargetCompID());
+        assertEquals("TWSUB", sessionID.getTargetSubID());
+        assertEquals("TWLOC", sessionID.getTargetLocationID());
+        assertEquals("ISLD", sessionID.getSenderCompID());
     }
 
     public void testMessageType() throws Exception {

@@ -81,7 +81,7 @@ public class DefaultSessionFactoryTest extends TestCase {
         settings.removeSetting(sessionID, Session.SETTING_HEARTBTINT);
         settings.setString(sessionID, SessionFactory.SETTING_CONNECTION_TYPE,
                 SessionFactory.INITIATOR_CONNECTION_TYPE);
-        createSessionAndAssertConfigError("no exception", "HeartBtInt not defined");
+        createSessionAndAssertConfigError("no exception", "HeartBtInt setting not found.");
     }
 
     public void testIncorrectTimeValues() throws Exception {

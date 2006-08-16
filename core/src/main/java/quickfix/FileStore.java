@@ -69,12 +69,17 @@ public class FileStore implements MessageStore {
         }
 		path = new File(path).getAbsolutePath();
 		
-        String sessionId = sessionID.getBeginString() + "-" + sessionID.getSenderCompID() + "-"
-                + sessionID.getTargetCompID();
-        if (sessionID.getSessionQualifier() != null && !sessionID.getSessionQualifier().equals("")) {
-            sessionId += "-" + sessionID.getSessionQualifier();
-        }
-        String prefix = FileUtil.fileAppendPath(path, sessionId + ".");
+        StringBuffer sessionLabelBuffer = new StringBuffer();
+        addLabelComponent(sessionLabelBuffer, sessionID.getBeginString());
+        addLabelComponent(sessionLabelBuffer, sessionID.getSenderCompID());
+        addLabelComponent(sessionLabelBuffer, sessionID.getSenderSubID());
+        addLabelComponent(sessionLabelBuffer, sessionID.getSenderLocationID());
+        addLabelComponent(sessionLabelBuffer, sessionID.getTargetCompID());
+        addLabelComponent(sessionLabelBuffer, sessionID.getTargetSubID());
+        addLabelComponent(sessionLabelBuffer, sessionID.getTargetLocationID());
+        addLabelComponent(sessionLabelBuffer, sessionID.getSessionQualifier());
+        
+        String prefix = FileUtil.fileAppendPath(path, sessionLabelBuffer.toString() + ".");
 
         msgFileName = prefix + "body";
         headerFileName = prefix + "header";
@@ -87,6 +92,15 @@ public class FileStore implements MessageStore {
         }
 
         initialize(false);
+    }
+
+    private void addLabelComponent(StringBuffer sessionLabel, String labelComponent) {
+        if (labelComponent.length() > 0) {
+            if (sessionLabel.length() > 0) {
+                sessionLabel.append("-");
+            }
+            sessionLabel.append(labelComponent);
+        }
     }
 
     void initialize(boolean deleteFiles) throws IOException {

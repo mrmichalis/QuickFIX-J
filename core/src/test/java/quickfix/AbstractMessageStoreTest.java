@@ -37,7 +37,8 @@ public abstract class AbstractMessageStoreTest extends TestCase {
             return;
         }
         long now = System.currentTimeMillis();
-        sessionID = new SessionID("FIX.4.2", "SENDER-" + now, "TARGET-" + now);
+        sessionID = new SessionID("FIX.4.2", "SENDER-" + now, "SENDERSUB", "SENDERLOC",
+                "TARGET-" + now, "TARGETSUB", "TARGETLOC", null);
         messageStoreFactory = getMessageStoreFactoryForTest();
         store = messageStoreFactory.create(sessionID);
         assertEquals("wrong store type", getMessageStoreClass(), store.getClass());
