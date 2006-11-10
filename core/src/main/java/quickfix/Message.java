@@ -20,7 +20,12 @@
 package quickfix;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.text.DecimalFormat;
+import java.text.FieldPosition;
+import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.List;
 
@@ -82,23 +87,32 @@ public class Message extends FieldMap {
 
     private boolean isValidStructure = true;
 
+    public static final Charset DEFAULT_CHARSET = Charset.forName("US-ASCII");
+
+    private final Charset charset;
+    
     public Message() {
-        // empty
+        charset = DEFAULT_CHARSET;
     }
 
     public Message(String string) throws InvalidMessage {
-        fromString(string, null, true);
+        this(string, true);
     }
 
     public Message(String string, boolean validate) throws InvalidMessage {
-        fromString(string, null, validate);
+        this(string, null, validate, DEFAULT_CHARSET);
     }
 
     public Message(String string, DataDictionary dd) throws InvalidMessage {
-        fromString(string, dd, true);
+        this(string, dd, true, DEFAULT_CHARSET);
     }
 
     public Message(String string, DataDictionary dd, boolean validate) throws InvalidMessage {
+        this(string, dd, validate, DEFAULT_CHARSET);
+    }
+    
+    public Message(String string, DataDictionary dd, boolean validate, Charset charset) throws InvalidMessage {
+        this.charset = charset;
         fromString(string, dd, validate);
     }
 
@@ -125,37 +139,146 @@ public class Message extends FieldMap {
     }
 
     public String toString() {
-        header.setField(new BodyLength(bodyLength()));
-        trailer.setField(new CheckSum(checkSum()));
-
         StringBuffer sb = new StringBuffer();
+        
+        header.setField(new BodyLength(0));
         header.calculateString(sb, null, null);
-        calculateString(sb, null, null);
+        this.calculateString(sb, null, null);
+        
+
+        trailer.removeField(CheckSum.FIELD);
+        
+        //trailer.setString(CheckSum.FIELD, checksumFormat.format(checksum(sb)));
         trailer.calculateString(sb, null, null);
 
+        // Patch up the body length
+        if (charset == DEFAULT_CHARSET) {
+            int bodyLength = sb.length() - 14 /*header prefix*/;
+            sb.replace(12, 13, Integer.toString(bodyLength));
+            int checksum = checksum(sb);
+            sb.append("10=");
+            toString(checksum, sb, 3, '0');
+            sb.append('\001');
+        } else {
+            ByteBuffer encodedBuffer = charset.encode(CharBuffer.wrap(sb));
+            int bodyLength = encodedBuffer.limit() - 14;
+        }
+        
         return sb.toString();
     }
 
+    final static char[] DigitTens = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1',
+            '1', '1', '1', '1', '1', '1', '1', '1', '2', '2', '2', '2', '2', '2', '2', '2', '2',
+            '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4',
+            '4', '4', '4', '4', '5', '5', '5', '5', '5', '5', '5', '5', '5', '5', '6', '6', '6',
+            '6', '6', '6', '6', '6', '6', '6', '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
+            '8', '8', '8', '8', '8', '8', '8', '8', '8', '8', '9', '9', '9', '9', '9', '9', '9',
+            '9', '9', '9', };
+
+    final static char[] DigitOnes = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1',
+            '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8',
+            '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5',
+            '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2',
+            '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6',
+            '7', '8', '9', };
+
+    final static char[] digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c',
+            'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+            'u', 'v', 'w', 'x', 'y', 'z' };
+
+    public static void toString(int i, StringBuffer sb, int width, char leftpad) {
+        int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
+        getChars(i, size, width, leftpad, sb);
+    }
+
+    static void getChars(int number, int index, int width, char leftpad, StringBuffer sb) {
+        int q, r;
+        int start = sb.length();
+        int position = start + width;
+        char sign = 0;
+
+        for (int i = width; i > 0; i--) {
+            sb.append('\000');
+        }
+        
+        if (number < 0) {
+            sign = '-';
+            number = -number;
+        }
+
+        while (number >= 65536) {
+            q = number / 100;
+            r = number - ((q << 6) + (q << 5) + (q << 2));
+            number = q;
+            sb.setCharAt(--position, DigitOnes[r]);
+            sb.setCharAt(--position, DigitTens[r]);
+        }
+
+        // Fall thru to fast mode for smaller numbers
+        // assert(i <= 65536, i);
+        for (;;) {
+            q = (number * 52429) >>> (16 + 3);
+            r = number - ((q << 3) + (q << 1)); // r = i-(q*10) ...
+            sb.setCharAt(--position, digits[r]);
+            number = q;
+            if (number == 0)
+                break;
+        }
+        
+        if (sign != 0) {
+            sb.setCharAt(--position, sign);
+        }
+        
+        while (position > start) {
+            sb.setCharAt(--position, leftpad);
+        }
+    }
+
+    final static int [] sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999,
+                                      99999999, 999999999, Integer.MAX_VALUE };
+
+    static int stringSize(int x) {
+        for (int i=0; ; i++)
+            if (x <= sizeTable[i])
+                return i+1;
+    }
+
+    private void appendChecksum(StringBuffer sb) {
+        int checksum = checksum(sb);
+        int hundreds = checksum / 100;
+        int tens = (checksum % 100) / 10;
+        int ones = checksum % 10;
+        sb.append("10=");
+        sb.append(hundreds).append(tens).append(ones);
+        sb.append('\001');
+    }
+    
+    private static DecimalFormat checksumFormat = new DecimalFormat("000");
+
+    private int checksum(CharSequence cs) {
+        int sum = 0;
+        if (charset == DEFAULT_CHARSET) {
+            for (int i = 0; i < cs.length(); i++) {
+                sum += cs.charAt(i);
+            }
+        } else {
+            ByteBuffer encodedBuffer = charset.encode(CharBuffer.wrap(cs));
+            while (encodedBuffer.position() < encodedBuffer.limit()) {
+                sum += ((int) encodedBuffer.get()) & 0xFF;
+            }
+        }
+        return sum % 256;
+    }
+    
     public int bodyLength() {
         return header.calculateLength() + calculateLength() + trailer.calculateLength();
     }
 
-    private static DecimalFormat checksumFormat = new DecimalFormat("000");
-
-    private int checkSum(String s) {
-        int offset = s.lastIndexOf("\00110=");
-        int sum = 0;
-        for (int i = 0; i < offset; i++) {
-            sum += s.charAt(i);
-        }
-        return (sum + 1) % 256;
+    private int checksumForValidation(String messageWithTrailer) {
+        return checksum(messageWithTrailer.subSequence(0, messageWithTrailer.lastIndexOf("\00110=")+1));
     }
-
-    private String checkSum() {
-        return checksumFormat.format((header.calculateTotal() + calculateTotal() + trailer
-                .calculateTotal()) % 256);
-    }
-
+    
     public void headerAddGroup(Group group) {
         header.addGroup(group);
     }
@@ -413,8 +536,8 @@ public class Message extends FieldMap {
                         + ", Expected body length=" + expectedBodyLength);
             }
             int checkSum = trailer.getInt(CheckSum.FIELD);
-            if (checkSum != checkSum(messageData)) {
-                throw new InvalidMessage("Expected CheckSum=" + checkSum(messageData)
+            if (checkSum != checksumForValidation(messageData)) {
+                throw new InvalidMessage("Expected CheckSum=" + checksumForValidation(messageData)
                         + ", Received CheckSum=" + checkSum);
             }
         } catch (FieldNotFound e) {

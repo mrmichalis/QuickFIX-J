@@ -19,6 +19,7 @@
 
 package quickfix.mina.message;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,6 +39,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 public class FIXMessageEncoder implements MessageEncoder {
 
     private static final Set TYPES;
+    private final String charSetName;
 
     static {
         Set types = new HashSet();
@@ -46,6 +48,14 @@ public class FIXMessageEncoder implements MessageEncoder {
         TYPES = Collections.unmodifiableSet(types);
     }
 
+    public FIXMessageEncoder() {
+        charSetName = "US-ASCII";
+    }
+    
+    public FIXMessageEncoder(String charSetName) {
+        this.charSetName = charSetName;
+    }
+    
     public Set getMessageTypes() {
         return TYPES;
     }
@@ -65,9 +75,12 @@ public class FIXMessageEncoder implements MessageEncoder {
         }
 
         ByteBuffer buffer = ByteBuffer.allocate(fixMessageString.length());
-        buffer.put(fixMessageString.getBytes());
+        try {
+            buffer.put(fixMessageString.getBytes(charSetName));
+        } catch (UnsupportedEncodingException e) {
+            throw new ProtocolCodecException(e);
+        }
         buffer.flip();
         out.write(buffer);
     }
-
 }

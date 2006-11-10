@@ -56,18 +56,8 @@ public class FIXMessageDecoderTest extends TestCase {
         super.tearDown();
     }
 
-    public void testInvalidStringCharset() throws Exception {
-        try {
-            decoder.setCharsetName("BOGUS");
-            fail("no exception thrown");
-        } catch (UnsupportedEncodingException e) {
-            // expected
-        }
-
-    }
-
     public void testStringDecoding() throws Exception {
-        decoder.setCharsetName("UTF-16");
+        decoder = new FIXMessageDecoder("UTF-16");
         setUpBuffer("8=FIX.4.2\0019=12\00135=X\001108=30\00110=049\001");
         MessageDecoderResult decoderResult = decoder.decode(null, buffer, decoderOutput);
         assertEquals("wrong decoder result", MessageDecoderResult.OK, decoderResult);

@@ -20,7 +20,6 @@
 package quickfix.mina.message;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
@@ -44,6 +43,8 @@ public class FIXMessageDecoder implements MessageDecoder {
     private static final byte[] CHECKSUM_PATTERN = "10=???\001".getBytes();
     private static final byte[] LOGON_PATTERN = "\00135=A\001".getBytes();
 
+    private final String charSetName;
+
     // Parsing states
     private static final int SEEKING_HEADER = 1;
     private static final int PARSING_LENGTH = 2;
@@ -54,7 +55,6 @@ public class FIXMessageDecoder implements MessageDecoder {
     private int bodyLength;
     private int position;
     private int headerOffset;
-    private String charsetName = "ISO_8859-1";
 
     private void resetState() {
         state = SEEKING_HEADER;
@@ -63,9 +63,14 @@ public class FIXMessageDecoder implements MessageDecoder {
     }
 
     public FIXMessageDecoder() {
-        resetState();
+        this("US-ASCII");
     }
 
+    public FIXMessageDecoder(String charSetName) {
+        this.charSetName = charSetName;
+        resetState();
+    }
+    
     public MessageDecoderResult decodable(IoSession session, ByteBuffer in) {
         headerOffset = indexOf(in, in.position(), HEADER_PATTERN);
         return headerOffset != -1 ? MessageDecoderResult.OK : MessageDecoderResult.NEED_DATA;
@@ -219,7 +224,7 @@ public class FIXMessageDecoder implements MessageDecoder {
     private String getMessageString(ByteBuffer buffer) throws UnsupportedEncodingException {
         byte[] data = new byte[position - buffer.position()];
         buffer.get(data);
-        return new String(data, charsetName);
+        return new String(data, charSetName);
     }
 
     private void handleError(ByteBuffer buffer, int recoveryPosition, String text,
@@ -259,14 +264,6 @@ public class FIXMessageDecoder implements MessageDecoder {
             }
         }
         return true;
-    }
-
-    public void setCharsetName(String charsetName) throws UnsupportedEncodingException {
-        if (Charset.isSupported(charsetName)) {
-            this.charsetName = charsetName;
-        } else {
-            throw new UnsupportedEncodingException();
-        }
     }
 
     public void finishDecode(IoSession arg0, ProtocolDecoderOutput arg1) throws Exception {

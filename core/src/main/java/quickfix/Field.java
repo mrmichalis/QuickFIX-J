@@ -20,6 +20,7 @@
 package quickfix;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Base class for FIX message fields. This class should be
@@ -106,16 +107,51 @@ public /*abstract*/ class Field implements Serializable{
     
     /*package*/ int getLength() {
         calculate();
-        return data.length()+1;
+        System.out.println(data+" "+byteCount(data));
+        return byteCount(data)+1;
     }
     
-    /*package*/ int getTotal() {
+    private int byteCount(String s) {
+        return s.getBytes().length;
+//        int length = 0;
+//        for (int i = 0; i < s.length(); i++) {
+//            int c = s.charAt(i);
+//            length++;
+//            if (c > 256) {
+//                System.out.println("FOO "+c+" "+data.length());
+//                length += (c & 0x0000FF00) != 0 ? 1 : 0;
+//                length += (c & 0x00FF0000) != 0 ? 1 : 0;
+//                length += (c & 0xFF000000) != 0 ? 1 : 0;
+//            }
+//        }
+//        return length;
+    }
+
+    /*package*/int getTotal() {
         calculate();
         int sum = 0;
-        for (int i = 0; i < data.length(); i++) {
-            sum += data.charAt(i);
+//        for (int i = 0; i < data.length(); i++) {
+//            char c = data.charAt(i);
+//            sum += c;
+//            if (c > 256) {
+//                sum += (c & 0x0000FF00) >> 8;
+//                sum += (c & 0x00FF0000) >> 16;
+//                sum += (c & 0xFF000000) >> 24;
+//            }
+//        }
+//        return sum + 1;
+        //todo: char or byte?
+        try {
+            byte[] byteData = data.getBytes("GBK");
+            for (int i = 0; i < byteData.length; i++) {
+                sum += ((int)byteData[i]) & 0xFF;
+            }
+            return sum + 1;
+        } catch (UnsupportedEncodingException e) {
+            // TODO Auto-generated catch block
+           throw new RuntimeException(e);
+          
         }
-        return sum+1;
     }
     
     private void calculate() {
