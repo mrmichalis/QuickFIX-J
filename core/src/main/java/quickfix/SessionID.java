@@ -19,9 +19,6 @@
 
 package quickfix;
 
-import quickfix.field.BeginString;
-import quickfix.field.SenderCompID;
-import quickfix.field.TargetCompID;
 
 /**
  * Identifier for a session. Only supports a company ID (target, sender)
@@ -40,15 +37,15 @@ public class SessionID {
         this("", "", "");
     }
 
-    public SessionID(BeginString beginString, SenderCompID senderCompID, TargetCompID targetCompID) {
-        this(beginString, senderCompID, targetCompID, "");
-    }
-
-    public SessionID(BeginString beginString, SenderCompID senderCompID, TargetCompID targetCompID,
-            String sessionQualifier) {
-        create(beginString.getValue(), senderCompID.getValue(), targetCompID.getValue(),
-                sessionQualifier);
-    }
+//    public SessionID(BeginString beginString, SenderCompID senderCompID, TargetCompID targetCompID) {
+//        this(beginString, senderCompID, targetCompID, "");
+//    }
+//
+//    public SessionID(BeginString beginString, SenderCompID senderCompID, TargetCompID targetCompID,
+//            String sessionQualifier) {
+//        create(beginString.getValue(), senderCompID.getValue(), targetCompID.getValue(),
+//                sessionQualifier);
+//    }
 
     public SessionID(String beginString, String senderCompID, String targetCompID) {
         create(beginString, senderCompID, targetCompID, "");

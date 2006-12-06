@@ -21,17 +21,23 @@ package quickfix;
 
 import java.util.HashMap;
 
-import quickfix.field.BusinessRejectReason;
-
 /**
  * Description strings for business reject reasons.
  * @see BusinessRejectReason
  */
-public class BusinessRejectReasonText extends BusinessRejectReason {
+public class BusinessRejectReason {
+    public static final int OTHER = 0; 
+    public static final int UNKOWN_ID = 1; 
+    public static final int UNKNOWN_SECURITY = 2; 
+    public static final int UNSUPPORTED_MESSAGE_TYPE = 3; 
+    public static final int APPLICATION_NOT_AVAILABLE = 4; 
+    public static final int CONDITIONALLY_REQUIRED_FIELD_MISSING = 5; 
+    public static final int NOT_AUTHORIZED = 6; 
+    public static final int DELIVERTO_FIRM_NOT_AVAILABLE_AT_THIS_TIME = 7; 
+
     private static HashMap rejectReasonText = new HashMap();
     
     static {
-        rejectReasonText.put(new Integer(FIELD), "Field");
         rejectReasonText.put(new Integer(OTHER), "Other");
         rejectReasonText.put(new Integer(UNKOWN_ID), "Unknown ID");
         rejectReasonText.put(new Integer(UNKNOWN_SECURITY), "Unknown Security");

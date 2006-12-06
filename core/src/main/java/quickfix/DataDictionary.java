@@ -43,9 +43,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import quickfix.field.BeginString;
-import quickfix.field.MsgType;
-import quickfix.field.SessionRejectReason;
 import quickfix.field.converter.BooleanConverter;
 import quickfix.field.converter.CharConverter;
 import quickfix.field.converter.DoubleConverter;
@@ -60,7 +57,9 @@ import quickfix.field.converter.UtcTimestampConverter;
  */
 public class DataDictionary {
     private static final int USER_DEFINED_TAG_MIN = 5000;
-
+    private static final int BeginString_FIELD = 8;
+    private static final int MsgType_FIELD = 35;
+    
     private static final String NO = "N";
 
     private boolean hasVersion = false;
@@ -520,7 +519,7 @@ public class DataDictionary {
      * @throws IncorrectDataFormat 
      */
     public void validate(Message message) throws IncorrectTagValue, FieldNotFound, IncorrectDataFormat {
-        if (hasVersion && !getVersion().equals(message.getHeader().getString(BeginString.FIELD))) {
+        if (hasVersion && !getVersion().equals(message.getHeader().getString(BeginString_FIELD))) {
             throw new UnsupportedVersion();
         }
 
@@ -529,7 +528,7 @@ public class DataDictionary {
                     message.getInvalidStructureTag());
         }
 
-        String msgType = message.getHeader().getString(MsgType.FIELD);
+        String msgType = message.getHeader().getString(MsgType_FIELD);
         if (hasVersion) {
             checkMsgType(msgType);
             checkHasRequired(message.getHeader(), message, message.getTrailer(), msgType);
@@ -936,7 +935,7 @@ public class DataDictionary {
 
                 String name = getAttribute(messageNode, "name");
                 if (name != null) {
-                    addValueName(MsgType.FIELD, msgtype, name);
+                    addValueName(MsgType_FIELD, msgtype, name);
                 }
 
                 NodeList messageFieldNodes = messageNode.getChildNodes();

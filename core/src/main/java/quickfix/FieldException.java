@@ -30,7 +30,7 @@ class FieldException extends RuntimeException {
     }
 
     public FieldException(int sessionRejectReason, int field) {
-        super(SessionRejectReasonText.getMessage(sessionRejectReason) + ", field=" + field);
+        super(SessionRejectReason.getMessage(sessionRejectReason) + ", field=" + field);
         this.sessionRejectReason = sessionRejectReason;
         this.field = field;
     }

@@ -35,36 +35,6 @@ import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import quickfix.field.BeginString;
-import quickfix.field.BodyLength;
-import quickfix.field.CheckSum;
-import quickfix.field.DeliverToCompID;
-import quickfix.field.DeliverToLocationID;
-import quickfix.field.DeliverToSubID;
-import quickfix.field.LastMsgSeqNumProcessed;
-import quickfix.field.MessageEncoding;
-import quickfix.field.MsgSeqNum;
-import quickfix.field.MsgType;
-import quickfix.field.OnBehalfOfCompID;
-import quickfix.field.OnBehalfOfLocationID;
-import quickfix.field.OnBehalfOfSendingTime;
-import quickfix.field.OnBehalfOfSubID;
-import quickfix.field.OrigSendingTime;
-import quickfix.field.PossDupFlag;
-import quickfix.field.PossResend;
-import quickfix.field.SecureDataLen;
-import quickfix.field.SenderCompID;
-import quickfix.field.SenderLocationID;
-import quickfix.field.SenderSubID;
-import quickfix.field.SendingTime;
-import quickfix.field.Signature;
-import quickfix.field.SignatureLength;
-import quickfix.field.TargetCompID;
-import quickfix.field.TargetLocationID;
-import quickfix.field.TargetSubID;
-import quickfix.field.XmlData;
-import quickfix.field.XmlDataLen;
-
 /**
  * Represents a FIX message.
  */
@@ -125,8 +95,8 @@ public class Message extends FieldMap {
     }
 
     public String toString() {
-        header.setField(new BodyLength(bodyLength()));
-        trailer.setField(new CheckSum(checkSum()));
+        header.setInt(ProtocolConstants.BodyLength, bodyLength());
+        trailer.setString(ProtocolConstants.CheckSum, checkSum());
 
         StringBuffer sb = new StringBuffer();
         header.calculateString(sb, null, null);
@@ -293,9 +263,9 @@ public class Message extends FieldMap {
     }
 
     public boolean isAdmin() {
-        if (header.isSetField(MsgType.FIELD)) {
+        if (header.isSetField(ProtocolConstants.MsgType)) {
             try {
-                String msgType = header.getString(MsgType.FIELD);
+                String msgType = header.getString(ProtocolConstants.MsgType);
                 return msgType.length() == 1 && "0A12345".indexOf(msgType.charAt(0)) != -1;
             } catch (FieldNotFound e) {
                 // shouldn't happen
@@ -318,57 +288,61 @@ public class Message extends FieldMap {
         trailer.clear();
     }
 
+    private static int[] prefields = new int[] { ProtocolConstants.BeginString,
+        ProtocolConstants.BodyLength, ProtocolConstants.MsgType };
+
     public class Header extends FieldMap {
 
         static final long serialVersionUID = -3193357271891865972L;
 
-        protected void calculateString(StringBuffer buffer, int[] excludedFields, int[] postFields) {
-            super.calculateString(buffer, new int[] { BeginString.FIELD, BodyLength.FIELD,
-                    MsgType.FIELD }, postFields);
+        protected void calculateString(StringBuffer buffer, int[] preFields, int[] postFields) {
+            super.calculateString(buffer, prefields, postFields);
         }
 
     }
+
+    private static int[] postfields = new int[] { ProtocolConstants.CheckSum };
 
     public class Trailer extends FieldMap {
 
         static final long serialVersionUID = -3193357271891865972L;
 
         protected void calculateString(StringBuffer buffer, int[] excludedFields, int[] postFields) {
-            super.calculateString(buffer, null, new int[] { CheckSum.FIELD });
+            super.calculateString(buffer, null, postfields);
         }
     }
 
     public void reverseRoute(Header header) throws FieldNotFound {
-        this.header.removeField(BeginString.FIELD);
-        this.header.removeField(SenderCompID.FIELD);
-        this.header.removeField(TargetCompID.FIELD);
+        this.header.removeField(ProtocolConstants.BeginString);
+        this.header.removeField(ProtocolConstants.SenderCompID);
+        this.header.removeField(ProtocolConstants.TargetCompID);
 
-        if (header.isSetField(BeginString.FIELD)) {
-            String beginString = header.getString(BeginString.FIELD);
+        if (header.isSetField(ProtocolConstants.BeginString)) {
+            String beginString = header.getString(ProtocolConstants.BeginString);
             if (beginString.length() > 0) {
-                this.header.setString(BeginString.FIELD, beginString);
+                this.header.setString(ProtocolConstants.BeginString, beginString);
             }
 
-            this.header.removeField(OnBehalfOfLocationID.FIELD);
-            this.header.removeField(DeliverToLocationID.FIELD);
+            this.header.removeField(ProtocolConstants.OnBehalfOfLocationID);
+            this.header.removeField(ProtocolConstants.DeliverToLocationID);
 
             if (beginString.compareTo(FixVersions.BEGINSTRING_FIX41) >= 0) {
-                copyField(header, OnBehalfOfLocationID.FIELD, DeliverToLocationID.FIELD);
-                copyField(header, DeliverToLocationID.FIELD, OnBehalfOfLocationID.FIELD);
+                copyField(header, ProtocolConstants.OnBehalfOfLocationID, ProtocolConstants.DeliverToLocationID);
+                copyField(header, ProtocolConstants.DeliverToLocationID, ProtocolConstants.OnBehalfOfLocationID);
             }
 
-            copyField(header, SenderCompID.FIELD, TargetCompID.FIELD);
-            copyField(header, TargetCompID.FIELD, SenderCompID.FIELD);
+            copyField(header, ProtocolConstants.SenderCompID, ProtocolConstants.TargetCompID);
+            copyField(header, ProtocolConstants.TargetCompID, ProtocolConstants.SenderCompID);
 
-            this.header.removeField(OnBehalfOfCompID.FIELD);
-            this.header.removeField(OnBehalfOfSubID.FIELD);
-            this.header.removeField(DeliverToCompID.FIELD);
-            this.header.removeField(DeliverToSubID.FIELD);
+            this.header.removeField(ProtocolConstants.OnBehalfOfCompID);
+            this.header.removeField(ProtocolConstants.OnBehalfOfSubID);
+            this.header.removeField(ProtocolConstants.DeliverToCompID);
+            this.header.removeField(ProtocolConstants.DeliverToSubID);
 
-            copyField(header, OnBehalfOfCompID.FIELD, DeliverToCompID.FIELD);
-            copyField(header, OnBehalfOfSubID.FIELD, DeliverToSubID.FIELD);
-            copyField(header, DeliverToCompID.FIELD, OnBehalfOfCompID.FIELD);
-            copyField(header, DeliverToSubID.FIELD, OnBehalfOfSubID.FIELD);
+            copyField(header, ProtocolConstants.OnBehalfOfCompID, ProtocolConstants.DeliverToCompID);
+            copyField(header, ProtocolConstants.OnBehalfOfSubID, ProtocolConstants.DeliverToSubID);
+            copyField(header, ProtocolConstants.DeliverToCompID, ProtocolConstants.OnBehalfOfCompID);
+            copyField(header, ProtocolConstants.DeliverToSubID, ProtocolConstants.OnBehalfOfSubID);
         }
     }
 
@@ -382,9 +356,9 @@ public class Message extends FieldMap {
     }
 
     void setSessionID(SessionID sessionID) {
-        header.setString(BeginString.FIELD, sessionID.getBeginString());
-        header.setString(SenderCompID.FIELD, sessionID.getSenderCompID());
-        header.setString(TargetCompID.FIELD, sessionID.getTargetCompID());
+        header.setString(ProtocolConstants.BeginString, sessionID.getBeginString());
+        header.setString(ProtocolConstants.SenderCompID, sessionID.getSenderCompID());
+        header.setString(ProtocolConstants.TargetCompID, sessionID.getTargetCompID());
     }
 
     public void fromString(String messageData, DataDictionary dd, boolean doValidation)
@@ -406,13 +380,13 @@ public class Message extends FieldMap {
 
     private void validate(String messageData) throws InvalidMessage {
         try {
-            int expectedBodyLength = header.getInt(BodyLength.FIELD);
+            int expectedBodyLength = header.getInt(ProtocolConstants.BodyLength);
             int actualBodyLength = bodyLength();
             if (expectedBodyLength != actualBodyLength) {
                 throw new InvalidMessage("Actual body length=" + actualBodyLength
                         + ", Expected body length=" + expectedBodyLength);
             }
-            int checkSum = trailer.getInt(CheckSum.FIELD);
+            int checkSum = trailer.getInt(ProtocolConstants.CheckSum);
             if (checkSum != checkSum(messageData)) {
                 throw new InvalidMessage("Expected CheckSum=" + checkSum(messageData)
                         + ", Received CheckSum=" + checkSum);
@@ -428,21 +402,21 @@ public class Message extends FieldMap {
         boolean invalidHeaderFieldOrder = false;
 
         StringField beginString = extractField(dd, header);
-        if (beginString == null || beginString.getField() != BeginString.FIELD) {
+        if (beginString == null || beginString.getField() != ProtocolConstants.BeginString) {
             invalidHeaderFieldOrder = true;
         }
         if (beginString != null) {
             header.setField(beginString);
         }
         StringField bodyLength = extractField(dd, header);
-        if (bodyLength == null || bodyLength.getField() != BodyLength.FIELD) {
+        if (bodyLength == null || bodyLength.getField() != ProtocolConstants.BodyLength) {
             invalidHeaderFieldOrder = true;
         }
         if (bodyLength != null) {
             header.setField(bodyLength);
         }
         StringField msgType = extractField(dd, header);
-        if (msgType == null || msgType.getField() != MsgType.FIELD) {
+        if (msgType == null || msgType.getField() != ProtocolConstants.MsgType) {
             invalidHeaderFieldOrder = true;
         }
         if (msgType != null) {
@@ -465,7 +439,7 @@ public class Message extends FieldMap {
     private String getMsgType() throws InvalidMessage {
         String res = null;
         try {
-            res = header.getString(MsgType.FIELD);
+            res = header.getString(ProtocolConstants.MsgType);
         } catch (FieldNotFound e) {
             throw new InvalidMessage(e.getMessage());
         }
@@ -561,32 +535,32 @@ public class Message extends FieldMap {
 
     static boolean isHeaderField(int field) {
         switch (field) {
-        case BeginString.FIELD:
-        case BodyLength.FIELD:
-        case MsgType.FIELD:
-        case SenderCompID.FIELD:
-        case TargetCompID.FIELD:
-        case OnBehalfOfCompID.FIELD:
-        case DeliverToCompID.FIELD:
-        case SecureDataLen.FIELD:
-        case MsgSeqNum.FIELD:
-        case SenderSubID.FIELD:
-        case SenderLocationID.FIELD:
-        case TargetSubID.FIELD:
-        case TargetLocationID.FIELD:
-        case OnBehalfOfSubID.FIELD:
-        case OnBehalfOfLocationID.FIELD:
-        case DeliverToSubID.FIELD:
-        case DeliverToLocationID.FIELD:
-        case PossDupFlag.FIELD:
-        case PossResend.FIELD:
-        case SendingTime.FIELD:
-        case OrigSendingTime.FIELD:
-        case XmlDataLen.FIELD:
-        case XmlData.FIELD:
-        case MessageEncoding.FIELD:
-        case LastMsgSeqNumProcessed.FIELD:
-        case OnBehalfOfSendingTime.FIELD:
+        case ProtocolConstants.BeginString:
+        case ProtocolConstants.BodyLength:
+        case ProtocolConstants.MsgType:
+        case ProtocolConstants.SenderCompID:
+        case ProtocolConstants.TargetCompID:
+        case ProtocolConstants.OnBehalfOfCompID:
+        case ProtocolConstants.DeliverToCompID:
+        case ProtocolConstants.SecureDataLen:
+        case ProtocolConstants.MsgSeqNum:
+        case ProtocolConstants.SenderSubID:
+        case ProtocolConstants.SenderLocationID:
+        case ProtocolConstants.TargetSubID:
+        case ProtocolConstants.TargetLocationID:
+        case ProtocolConstants.OnBehalfOfSubID:
+        case ProtocolConstants.OnBehalfOfLocationID:
+        case ProtocolConstants.DeliverToSubID:
+        case ProtocolConstants.DeliverToLocationID:
+        case ProtocolConstants.PossDupFlag:
+        case ProtocolConstants.PossResend:
+        case ProtocolConstants.SendingTime:
+        case ProtocolConstants.OrigSendingTime:
+        case ProtocolConstants.XmlDataLen:
+        case ProtocolConstants.XmlData:
+        case ProtocolConstants.MessageEncoding:
+        case ProtocolConstants.LastMsgSeqNumProcessed:
+        case ProtocolConstants.OnBehalfOfSendingTime:
             return true;
         default:
             return false;
@@ -600,9 +574,9 @@ public class Message extends FieldMap {
 
     static boolean isTrailerField(int field) {
         switch (field) {
-        case SignatureLength.FIELD:
-        case Signature.FIELD:
-        case CheckSum.FIELD:
+        case ProtocolConstants.SignatureLength:
+        case ProtocolConstants.Signature:
+        case ProtocolConstants.CheckSum:
             return true;
         default:
             return false;

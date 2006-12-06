@@ -25,29 +25,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import quickfix.field.BeginSeqNo;
-import quickfix.field.BeginString;
-import quickfix.field.BusinessRejectReason;
-import quickfix.field.EncryptMethod;
-import quickfix.field.EndSeqNo;
-import quickfix.field.GapFillFlag;
-import quickfix.field.HeartBtInt;
-import quickfix.field.MsgSeqNum;
-import quickfix.field.MsgType;
-import quickfix.field.NewSeqNo;
-import quickfix.field.OrigSendingTime;
-import quickfix.field.PossDupFlag;
-import quickfix.field.RefMsgType;
-import quickfix.field.RefSeqNum;
-import quickfix.field.RefTagID;
-import quickfix.field.ResetSeqNumFlag;
-import quickfix.field.SenderCompID;
-import quickfix.field.SendingTime;
-import quickfix.field.SessionRejectReason;
-import quickfix.field.TargetCompID;
-import quickfix.field.TestReqID;
-import quickfix.field.Text;
-
 /**
  * The Session is the primary FIX abstraction for message communication. It
  * performs sequencing and error recovery and represents an communication channel
@@ -329,8 +306,8 @@ public class Session {
      */
     public static boolean sendToTarget(Message message, String qualifier) throws SessionNotFound {
         try {
-            String senderCompID = message.getHeader().getString(SenderCompID.FIELD);
-            String targetCompID = message.getHeader().getString(TargetCompID.FIELD);
+            String senderCompID = message.getHeader().getString(ProtocolConstants.SenderCompID);
+            String targetCompID = message.getHeader().getString(ProtocolConstants.TargetCompID);
             return sendToTarget(message, senderCompID, targetCompID, qualifier);
         } catch (SessionNotFound e) {
             throw e;
@@ -372,7 +349,7 @@ public class Session {
             String qualifier) throws SessionNotFound {
         try {
             return sendToTarget(message, new SessionID(message.getHeader().getString(
-                    BeginString.FIELD), senderCompID, targetCompID, qualifier));
+                    ProtocolConstants.BeginString), senderCompID, targetCompID, qualifier));
         } catch (SessionNotFound e) {
             throw e;
         } catch (Exception e) {
@@ -417,17 +394,17 @@ public class Session {
 
     private void initializeHeader(Message.Header header) {
         state.setLastSentTime(SystemTime.currentTimeMillis());
-        header.setString(BeginString.FIELD, sessionID.getBeginString());
-        header.setString(SenderCompID.FIELD, sessionID.getSenderCompID());
-        header.setString(TargetCompID.FIELD, sessionID.getTargetCompID());
-        header.setInt(MsgSeqNum.FIELD, getExpectedSenderNum());
+        header.setString(ProtocolConstants.BeginString, sessionID.getBeginString());
+        header.setString(ProtocolConstants.SenderCompID, sessionID.getSenderCompID());
+        header.setString(ProtocolConstants.TargetCompID, sessionID.getTargetCompID());
+        header.setInt(ProtocolConstants.MsgSeqNum, getExpectedSenderNum());
         insertSendingTime(header);
     }
 
     private void insertSendingTime(Message.Header header) {
         boolean includeMillis = sessionID.getBeginString().compareTo(FixVersions.BEGINSTRING_FIX42) >= 0
                 && millisecondsInTimeStamp;
-        header.setUtcTimeStamp(SendingTime.FIELD, SystemTime.getDate(), includeMillis);
+        header.setUtcTimeStamp(ProtocolConstants.SendingTime, SystemTime.getDate(), includeMillis);
     }
 
     /**
@@ -583,11 +560,11 @@ public class Session {
             return;
         }
 
-        String msgType = message.getHeader().getString(MsgType.FIELD);
+        String msgType = message.getHeader().getString(ProtocolConstants.MsgType);
 
         try {
 
-            String beginString = message.getHeader().getString(BeginString.FIELD);
+            String beginString = message.getHeader().getString(ProtocolConstants.BeginString);
 
             if (!beginString.equals(sessionID.getBeginString())) {
                 throw new UnsupportedVersion();
@@ -597,19 +574,19 @@ public class Session {
                 dataDictionary.validate(message);
             }
 
-            if (msgType.equals(MsgType.LOGON)) {
+            if (msgType.equals(ProtocolConstants.MsgType_LOGON)) {
                 nextLogon(message);
-            } else if (msgType.equals(MsgType.HEARTBEAT)) {
+            } else if (msgType.equals(ProtocolConstants.MsgType_HEARTBEAT)) {
                 nextHeartBeat(message);
-            } else if (msgType.equals(MsgType.TEST_REQUEST)) {
+            } else if (msgType.equals(ProtocolConstants.MsgType_TEST_REQUEST)) {
                 nextTestRequest(message);
-            } else if (msgType.equals(MsgType.SEQUENCE_RESET)) {
+            } else if (msgType.equals(ProtocolConstants.MsgType_SEQUENCE_RESET)) {
                 nextSequenceReset(message);
-            } else if (msgType.equals(MsgType.LOGOUT)) {
+            } else if (msgType.equals(ProtocolConstants.MsgType_LOGOUT)) {
                 nextLogout(message);
-            } else if (msgType.equals(MsgType.RESEND_REQUEST)) {
+            } else if (msgType.equals(ProtocolConstants.MsgType_RESEND_REQUEST)) {
                 nextResendRequest(message);
-            } else if (msgType.equals(MsgType.REJECT)) {
+            } else if (msgType.equals(ProtocolConstants.MsgType_REJECT)) {
                 nextReject(message);
             } else {
                 if (!verify(message)) {
@@ -626,7 +603,7 @@ public class Session {
                         BusinessRejectReason.CONDITIONALLY_REQUIRED_FIELD_MISSING, e.field);
             } else {
                 generateReject(message, SessionRejectReason.REQUIRED_TAG_MISSING, e.field);
-                if (msgType.equals(MsgType.LOGON)) {
+                if (msgType.equals(ProtocolConstants.MsgType_LOGON)) {
                     getLog().onEvent("Required field missing from logon");
                     disconnect();
                 }
@@ -652,7 +629,7 @@ public class Session {
                 generateReject(message, "Unsupported message type");
             }
         } catch (UnsupportedVersion e) {
-            if (msgType.equals(MsgType.LOGOUT)) {
+            if (msgType.equals(ProtocolConstants.MsgType_LOGOUT)) {
                 nextLogout(message);
             } else {
                 generateLogout("Incorrect BeginString");
@@ -692,8 +669,8 @@ public class Session {
             return;
         }
 
-        int beginSeqNo = resendRequest.getInt(BeginSeqNo.FIELD);
-        int endSeqNo = resendRequest.getInt(EndSeqNo.FIELD);
+        int beginSeqNo = resendRequest.getInt(ProtocolConstants.BeginSeqNo);
+        int endSeqNo = resendRequest.getInt(ProtocolConstants.EndSeqNo);
 
         getLog().onEvent("Received ResendRequest FROM: " + beginSeqNo + " TO: " + endSeqNo);
 
@@ -723,8 +700,8 @@ public class Session {
 
         for (int i = 0; i < messages.size(); i++) {
             Message msg = parseMessage((String) messages.get(i));
-            msgSeqNum = msg.getHeader().getInt(MsgSeqNum.FIELD);
-            String msgType = msg.getHeader().getString(MsgType.FIELD);
+            msgSeqNum = msg.getHeader().getInt(ProtocolConstants.MsgSeqNum);
+            String msgType = msg.getHeader().getString(ProtocolConstants.MsgType);
 
             if ((current != msgSeqNum) && begin == 0) {
                 begin = current;
@@ -761,7 +738,7 @@ public class Session {
             generateSequenceReset(beginSeqNo, endSeqNo);
         }
 
-        msgSeqNum = resendRequest.getHeader().getInt(MsgSeqNum.FIELD);
+        msgSeqNum = resendRequest.getHeader().getInt(ProtocolConstants.MsgSeqNum);
         if (!isTargetTooHigh(msgSeqNum) && !isTargetTooLow(msgSeqNum)) {
             state.incrNextTargetMsgSeqNum();
         }
@@ -780,24 +757,24 @@ public class Session {
 
     private void generateSequenceReset(int beginSeqNo, int endSeqNo) throws FieldNotFound {
         Message sequenceReset = messageFactory.create(sessionID.getBeginString(),
-                MsgType.SEQUENCE_RESET);
+                ProtocolConstants.MsgType_SEQUENCE_RESET);
         int newSeqNo = endSeqNo;
-        sequenceReset.getHeader().setBoolean(PossDupFlag.FIELD, true);
-        sequenceReset.setInt(NewSeqNo.FIELD, newSeqNo);
+        sequenceReset.getHeader().setBoolean(ProtocolConstants.PossDupFlag, true);
+        sequenceReset.setInt(ProtocolConstants.NewSeqNo, newSeqNo);
         initializeHeader(sequenceReset.getHeader());
-        sequenceReset.getHeader().setUtcTimeStamp(OrigSendingTime.FIELD,
-                sequenceReset.getHeader().getUtcTimeStamp(SendingTime.FIELD));
-        sequenceReset.getHeader().setInt(MsgSeqNum.FIELD, beginSeqNo);
-        sequenceReset.setBoolean(GapFillFlag.FIELD, true);
+        sequenceReset.getHeader().setUtcTimeStamp(ProtocolConstants.OrigSendingTime,
+                sequenceReset.getHeader().getUtcTimeStamp(ProtocolConstants.SendingTime));
+        sequenceReset.getHeader().setInt(ProtocolConstants.MsgSeqNum, beginSeqNo);
+        sequenceReset.setBoolean(ProtocolConstants.GapFillFlag, true);
         sendRaw(sequenceReset, beginSeqNo);
         getLog().onEvent("Sent SequenceReset TO: " + newSeqNo);
     }
 
     private boolean resend(Message message) throws FieldNotFound {
         Message.Header header = message.getHeader();
-        Date sendingTime = header.getUtcTimeStamp(SendingTime.FIELD);
-        header.setUtcTimeStamp(OrigSendingTime.FIELD, sendingTime);
-        header.setBoolean(PossDupFlag.FIELD, true);
+        Date sendingTime = header.getUtcTimeStamp(ProtocolConstants.SendingTime);
+        header.setUtcTimeStamp(ProtocolConstants.OrigSendingTime, sendingTime);
+        header.setBoolean(ProtocolConstants.PossDupFlag, true);
         insertSendingTime(header);
 
         try {
@@ -835,10 +812,10 @@ public class Session {
     }
 
     private void generateLogout(String text) {
-        Message logout = messageFactory.create(sessionID.getBeginString(), MsgType.LOGOUT);
+        Message logout = messageFactory.create(sessionID.getBeginString(), ProtocolConstants.MsgType_LOGOUT);
         initializeHeader(logout.getHeader());
         if (text != null && !"".equals(text)) {
-            logout.setString(Text.FIELD, text);
+            logout.setString(ProtocolConstants.Text, text);
         }
         sendRaw(logout, 0);
         state.setLogoutSent(true);
@@ -847,16 +824,16 @@ public class Session {
     private void nextSequenceReset(Message sequenceReset) throws IOException, RejectLogon,
             FieldNotFound, IncorrectDataFormat, IncorrectTagValue, UnsupportedMessageType {
         boolean isGapFill = false;
-        if (sequenceReset.isSetField(GapFillFlag.FIELD)) {
-            isGapFill = sequenceReset.getBoolean(GapFillFlag.FIELD);
+        if (sequenceReset.isSetField(ProtocolConstants.GapFillFlag)) {
+            isGapFill = sequenceReset.getBoolean(ProtocolConstants.GapFillFlag);
         }
 
         if (!verify(sequenceReset, isGapFill, isGapFill)) {
             return;
         }
 
-        if (sequenceReset.isSetField(NewSeqNo.FIELD)) {
-            int newSequence = sequenceReset.getInt(NewSeqNo.FIELD);
+        if (sequenceReset.isSetField(ProtocolConstants.NewSeqNo)) {
+            int newSequence = sequenceReset.getInt(ProtocolConstants.NewSeqNo);
 
             getLog().onEvent(
                     "Received SequenceReset FROM: " + getExpectedTargetNum() + " TO: "
@@ -872,28 +849,28 @@ public class Session {
 
     private void generateReject(Message message, String str) throws FieldNotFound, IOException {
         String beginString = sessionID.getBeginString();
-        Message reject = messageFactory.create(beginString, MsgType.REJECT);
+        Message reject = messageFactory.create(beginString, ProtocolConstants.MsgType_REJECT);
         reject.reverseRoute(message.getHeader());
         initializeHeader(reject.getHeader());
 
-        String msgType = message.getHeader().getString(MsgType.FIELD);
-        String msgSeqNum = message.getHeader().getString(MsgSeqNum.FIELD);
+        String msgType = message.getHeader().getString(ProtocolConstants.MsgType);
+        String msgSeqNum = message.getHeader().getString(ProtocolConstants.MsgSeqNum);
         if (beginString.compareTo(FixVersions.BEGINSTRING_FIX42) >= 0) {
-            reject.setString(RefMsgType.FIELD, msgType);
+            reject.setString(ProtocolConstants.RefMsgType, msgType);
         }
-        reject.setString(RefSeqNum.FIELD, msgSeqNum);
+        reject.setString(ProtocolConstants.RefSeqNum, msgSeqNum);
 
         boolean isPossibleDuplicate = false;
-        if (message.getHeader().isSetField(PossDupFlag.FIELD)) {
-            isPossibleDuplicate = message.getHeader().getBoolean(PossDupFlag.FIELD);
+        if (message.getHeader().isSetField(ProtocolConstants.PossDupFlag)) {
+            isPossibleDuplicate = message.getHeader().getBoolean(ProtocolConstants.PossDupFlag);
         }
 
-        if (!msgType.equals(MsgType.LOGON) && !msgType.equals(MsgType.SEQUENCE_RESET)
+        if (!msgType.equals(ProtocolConstants.MsgType_LOGON) && !msgType.equals(ProtocolConstants.MsgType_SEQUENCE_RESET)
                 && !isPossibleDuplicate) {
             state.incrNextTargetMsgSeqNum();
         }
 
-        reject.setString(Text.FIELD, str);
+        reject.setString(ProtocolConstants.Text, str);
         sendRaw(reject, 0);
         getLog().onEvent("Message " + msgSeqNum + " Rejected: " + str);
 
@@ -901,7 +878,7 @@ public class Session {
 
     private void generateReject(Message message, int err, int field) throws IOException,
             FieldNotFound {
-        String reason = SessionRejectReasonText.getMessage(err);
+        String reason = SessionRejectReason.getMessage(err);
         if (!state.isLogonReceived()) {
             String errorMessage = "Tried to send a reject while not logged on: " + reason
                     + " (field " + field + ")";
@@ -910,36 +887,36 @@ public class Session {
         }
 
         String beginString = sessionID.getBeginString();
-        Message reject = messageFactory.create(beginString, MsgType.REJECT);
+        Message reject = messageFactory.create(beginString, ProtocolConstants.MsgType_REJECT);
         reject.reverseRoute(message.getHeader());
         initializeHeader(reject.getHeader());
 
         String msgType = "";
-        if (message.getHeader().isSetField(MsgType.FIELD)) {
-            msgType = message.getHeader().getString(MsgType.FIELD);
+        if (message.getHeader().isSetField(ProtocolConstants.MsgType)) {
+            msgType = message.getHeader().getString(ProtocolConstants.MsgType);
         }
 
         int msgSeqNum = 0;
-        if (message.getHeader().isSetField(MsgSeqNum.FIELD)) {
-            msgSeqNum = message.getHeader().getInt(MsgSeqNum.FIELD);
-            reject.setInt(RefSeqNum.FIELD, msgSeqNum);
+        if (message.getHeader().isSetField(ProtocolConstants.MsgSeqNum)) {
+            msgSeqNum = message.getHeader().getInt(ProtocolConstants.MsgSeqNum);
+            reject.setInt(ProtocolConstants.RefSeqNum, msgSeqNum);
         }
 
         boolean possDupFlag = false;
-        if (message.getHeader().isSetField(PossDupFlag.FIELD)) {
-            possDupFlag = message.getHeader().getBoolean(PossDupFlag.FIELD);
+        if (message.getHeader().isSetField(ProtocolConstants.PossDupFlag)) {
+            possDupFlag = message.getHeader().getBoolean(ProtocolConstants.PossDupFlag);
         }
 
         if (beginString.compareTo(FixVersions.BEGINSTRING_FIX42) >= 0) {
             if (!msgType.equals("")) {
-                reject.setString(RefMsgType.FIELD, msgType);
+                reject.setString(ProtocolConstants.RefMsgType, msgType);
             }
             if ((beginString.equals(FixVersions.BEGINSTRING_FIX42) && err <= SessionRejectReason.INVALID_MSGTYPE)
                     || beginString.compareTo(FixVersions.BEGINSTRING_FIX42) > 0) {
-                reject.setInt(SessionRejectReason.FIELD, err);
+                reject.setInt(ProtocolConstants.SessionRejectReason, err);
             }
         }
-        if (!msgType.equals(MsgType.LOGON) && !msgType.equals(MsgType.SEQUENCE_RESET)
+        if (!msgType.equals(ProtocolConstants.MsgType_LOGON) && !msgType.equals(ProtocolConstants.MsgType_SEQUENCE_RESET)
                 && (msgSeqNum == getExpectedTargetNum() || !possDupFlag)) {
             state.incrNextTargetMsgSeqNum();
         }
@@ -957,38 +934,38 @@ public class Session {
     }
 
     private void populateRejectReason(Message reject, String reason) {
-        reject.setString(Text.FIELD, reason);
+        reject.setString(ProtocolConstants.Text, reason);
     }
 
     private void populateRejectReason(Message reject, int field, String reason, boolean includeFieldInReason) {
         boolean isRejectMessage;
         try {
-            isRejectMessage = MsgType.REJECT.equals(reject.getHeader().getString(MsgType.FIELD));
+            isRejectMessage = ProtocolConstants.MsgType_REJECT.equals(reject.getHeader().getString(ProtocolConstants.MsgType));
         } catch (FieldNotFound e) {
             isRejectMessage = false;
         }
         if (isRejectMessage
                 && sessionID.getBeginString().compareTo(FixVersions.BEGINSTRING_FIX42) >= 0) {
-            reject.setInt(RefTagID.FIELD, field);
-            reject.setString(Text.FIELD, reason);
+            reject.setInt(ProtocolConstants.RefTagID, field);
+            reject.setString(ProtocolConstants.Text, reason);
         } else {
-            reject.setString(Text.FIELD, reason + (includeFieldInReason ? " (" + field + ")" : ""));
+            reject.setString(ProtocolConstants.Text, reason + (includeFieldInReason ? " (" + field + ")" : ""));
         }
     }
 
     private void generateBusinessReject(Message message, int err, int field) throws FieldNotFound,
             IOException {
         Message reject = messageFactory.create(sessionID.getBeginString(),
-                MsgType.BUSINESS_MESSAGE_REJECT);
+                ProtocolConstants.MsgType_BUSINESS_MESSAGE_REJECT);
         initializeHeader(reject.getHeader());
-        String msgType = message.getHeader().getString(MsgType.FIELD);
-        String msgSeqNum = message.getHeader().getString(MsgSeqNum.FIELD);
-        reject.setString(RefMsgType.FIELD, msgType);
-        reject.setString(RefSeqNum.FIELD, msgSeqNum);
-        reject.setInt(BusinessRejectReason.FIELD, err);
+        String msgType = message.getHeader().getString(ProtocolConstants.MsgType);
+        String msgSeqNum = message.getHeader().getString(ProtocolConstants.MsgSeqNum);
+        reject.setString(ProtocolConstants.RefMsgType, msgType);
+        reject.setString(ProtocolConstants.RefSeqNum, msgSeqNum);
+        reject.setInt(ProtocolConstants.BusinessRejectReason, err);
         state.incrNextTargetMsgSeqNum();
 
-        String reason = BusinessRejectReasonText.getMessage(err);
+        String reason = BusinessRejectReason.getMessage(err);
         populateRejectReason(reject, field, reason, false);
         getLog().onEvent(
                 "Message " + msgSeqNum + (reason != null ? (" Rejected: " + reason) : "")
@@ -1009,10 +986,10 @@ public class Session {
     }
 
     private void generateHeartbeat(Message testRequest) throws FieldNotFound {
-        Message heartbeat = messageFactory.create(sessionID.getBeginString(), MsgType.HEARTBEAT);
+        Message heartbeat = messageFactory.create(sessionID.getBeginString(), ProtocolConstants.MsgType_HEARTBEAT);
         initializeHeader(heartbeat.getHeader());
-        if (testRequest.isSetField(TestReqID.FIELD)) {
-            heartbeat.setString(TestReqID.FIELD, testRequest.getString(TestReqID.FIELD));
+        if (testRequest.isSetField(ProtocolConstants.TestReqID)) {
+            heartbeat.setString(ProtocolConstants.TestReqID, testRequest.getString(ProtocolConstants.TestReqID));
         }
         sendRaw(heartbeat, 0);
     }
@@ -1033,13 +1010,13 @@ public class Session {
         String msgType;
         try {
             Message.Header header = msg.getHeader();
-            String senderCompID = header.getString(SenderCompID.FIELD);
-            String targetCompID = header.getString(TargetCompID.FIELD);
-            Date sendingTime = header.getUtcTimeStamp(SendingTime.FIELD);
-            msgType = header.getString(MsgType.FIELD);
+            String senderCompID = header.getString(ProtocolConstants.SenderCompID);
+            String targetCompID = header.getString(ProtocolConstants.TargetCompID);
+            Date sendingTime = header.getUtcTimeStamp(ProtocolConstants.SendingTime);
+            msgType = header.getString(ProtocolConstants.MsgType);
             int msgSeqNum = 0;
             if (checkTooHigh || checkTooLow) {
-                msgSeqNum = header.getInt(MsgSeqNum.FIELD);
+                msgSeqNum = header.getInt(ProtocolConstants.MsgSeqNum);
             }
 
             if (!validLogonState(msgType)) {
@@ -1093,12 +1070,12 @@ public class Session {
         Message.Header header = msg.getHeader();
 
         boolean possDupFlag = false;
-        if (header.isSetField(PossDupFlag.FIELD)) {
-            possDupFlag = header.getBoolean(PossDupFlag.FIELD);
+        if (header.isSetField(ProtocolConstants.PossDupFlag)) {
+            possDupFlag = header.getBoolean(ProtocolConstants.PossDupFlag);
         }
 
         if (!possDupFlag) {
-            int msgSeqNum = header.getInt(MsgSeqNum.FIELD);
+            int msgSeqNum = header.getInt(ProtocolConstants.MsgSeqNum);
             String text = "MsgSeqNum too low, expecting " + getExpectedTargetNum()
                     + " but received " + msgSeqNum;
             generateLogout(text);
@@ -1137,23 +1114,23 @@ public class Session {
 
     // This is public for AbstractSocketInitiator
     public boolean validLogonState(String msgType) {
-        if (msgType.equals(MsgType.LOGON) && state.isResetSent() || state.isResetReceived()) {
+        if (msgType.equals(ProtocolConstants.MsgType_LOGON) && state.isResetSent() || state.isResetReceived()) {
             return true;
         }
-        if (msgType.equals(MsgType.LOGON) && !state.isLogonReceived()
-                || !msgType.equals(MsgType.LOGON) && state.isLogonReceived()) {
+        if (msgType.equals(ProtocolConstants.MsgType_LOGON) && !state.isLogonReceived()
+                || !msgType.equals(ProtocolConstants.MsgType_LOGON) && state.isLogonReceived()) {
             return true;
         }
-        if (msgType.equals(MsgType.LOGOUT) && state.isLogonSent()) {
+        if (msgType.equals(ProtocolConstants.MsgType_LOGOUT) && state.isLogonSent()) {
             return true;
         }
-        if (!msgType.equals(MsgType.LOGOUT) && state.isLogoutSent()) {
+        if (!msgType.equals(ProtocolConstants.MsgType_LOGOUT) && state.isLogoutSent()) {
             return true;
         }
-        if (msgType.equals(MsgType.SEQUENCE_RESET)) {
+        if (msgType.equals(ProtocolConstants.MsgType_SEQUENCE_RESET)) {
             return true;
         }
-        if (msgType.equals(MsgType.REJECT)) {
+        if (msgType.equals(ProtocolConstants.MsgType_REJECT)) {
             return true;
         }
         return false;
@@ -1229,23 +1206,23 @@ public class Session {
     }
 
     private void generateHeartbeat() {
-        Message heartbeat = messageFactory.create(sessionID.getBeginString(), MsgType.HEARTBEAT);
+        Message heartbeat = messageFactory.create(sessionID.getBeginString(), ProtocolConstants.MsgType_HEARTBEAT);
         initializeHeader(heartbeat.getHeader());
         sendRaw(heartbeat, 0);
     }
 
     private void generateTestRequest(String id) {
         Message testRequest = messageFactory.create(sessionID.getBeginString(),
-                MsgType.TEST_REQUEST);
+                ProtocolConstants.MsgType_TEST_REQUEST);
         initializeHeader(testRequest.getHeader());
-        testRequest.setString(TestReqID.FIELD, id);
+        testRequest.setString(ProtocolConstants.TestReqID, id);
         sendRaw(testRequest, 0);
     }
 
     private boolean generateLogon() throws IOException {
-        Message logon = messageFactory.create(sessionID.getBeginString(), MsgType.LOGON);
-        logon.setInt(EncryptMethod.FIELD, 0);
-        logon.setInt(HeartBtInt.FIELD, state.getHeartBeatInterval());
+        Message logon = messageFactory.create(sessionID.getBeginString(), ProtocolConstants.MsgType_LOGON);
+        logon.setInt(ProtocolConstants.EncryptMethod, 0);
+        logon.setInt(ProtocolConstants.HeartBtInt, state.getHeartBeatInterval());
         if (isRefreshNeeded()) {
             getLog().onEvent("Refreshing message/state store at logon");
             getStore().refresh();
@@ -1254,7 +1231,7 @@ public class Session {
             state.reset();
         }
         if (isResetNeeded()) {
-            logon.setBoolean(ResetSeqNumFlag.FIELD, true);
+            logon.setBoolean(ProtocolConstants.ResetSeqNumFlag, true);
         }
         state.setLastReceivedTime(SystemTime.currentTimeMillis());
         state.clearTestRequestCounter();
@@ -1296,16 +1273,16 @@ public class Session {
 
     private void nextLogon(Message logon) throws FieldNotFound, RejectLogon, IncorrectDataFormat,
             IncorrectTagValue, UnsupportedMessageType, IOException, InvalidMessage {
-        String senderCompID = logon.getHeader().getString(SenderCompID.FIELD);
-        String targetCompID = logon.getHeader().getString(TargetCompID.FIELD);
+        String senderCompID = logon.getHeader().getString(ProtocolConstants.SenderCompID);
+        String targetCompID = logon.getHeader().getString(ProtocolConstants.TargetCompID);
 
         if (isRefreshNeeded()) {
             getLog().onEvent("Refreshing message/state store at logon");
             getStore().refresh();
         }
 
-        if (logon.isSetField(ResetSeqNumFlag.FIELD)) {
-            state.setResetReceived(logon.getBoolean(ResetSeqNumFlag.FIELD));
+        if (logon.isSetField(ProtocolConstants.ResetSeqNumFlag)) {
+            state.setResetReceived(logon.getBoolean(ProtocolConstants.ResetSeqNumFlag));
         }
 
         if (state.isResetReceived()) {
@@ -1346,7 +1323,7 @@ public class Session {
         state.setResetSent(false);
         state.setResetReceived(false);
 
-        int sequence = logon.getHeader().getInt(MsgSeqNum.FIELD);
+        int sequence = logon.getHeader().getInt(ProtocolConstants.MsgSeqNum);
         if (isTargetTooHigh(sequence) && !resetOnLogon) {
             doTargetTooHigh(logon);
         } else {
@@ -1372,8 +1349,8 @@ public class Session {
 
         if (msg != null) {
             getLog().onEvent("Processing QUEUED message: " + num);
-            String msgType = msg.getHeader().getString(MsgType.FIELD);
-            if (msgType.equals(MsgType.LOGON) || msgType.equals(MsgType.RESEND_REQUEST)) {
+            String msgType = msg.getHeader().getString(ProtocolConstants.MsgType);
+            if (msgType.equals(ProtocolConstants.MsgType_LOGON) || msgType.equals(ProtocolConstants.MsgType_RESEND_REQUEST)) {
                 state.incrNextTargetMsgSeqNum();
             } else {
                 // TODO Is it necessary to convert the queued message to a string?
@@ -1391,7 +1368,7 @@ public class Session {
         } catch (InvalidMessage e) {
             String message = e.getMessage();
             getLog().onEvent(message);
-            if (MsgType.LOGON.equals(MessageUtils.getMessageType(msg))) {
+            if (ProtocolConstants.MsgType_LOGON.equals(MessageUtils.getMessageType(msg))) {
                 getLog().onEvent("Logon message is not valid");
                 disconnect();
             }
@@ -1401,8 +1378,8 @@ public class Session {
 
     private void doTargetTooHigh(Message msg) throws FieldNotFound {
         Message.Header header = msg.getHeader();
-        String beginString = header.getString(BeginString.FIELD);
-        int msgSeqNum = header.getInt(MsgSeqNum.FIELD);
+        String beginString = header.getString(ProtocolConstants.BeginString);
+        int msgSeqNum = header.getInt(ProtocolConstants.MsgSeqNum);
 
         getLog().onEvent(
                 "MsgSeqNum too high, expecting " + getExpectedTargetNum() + " but received "
@@ -1424,7 +1401,7 @@ public class Session {
     }
 
     private void generateResendRequest(String beginString, int msgSeqNum) {
-        Message resendRequest = messageFactory.create(beginString, MsgType.RESEND_REQUEST);
+        Message resendRequest = messageFactory.create(beginString, ProtocolConstants.MsgType_RESEND_REQUEST);
         int beginSeqNo = getExpectedTargetNum();
         int endSeqNo = msgSeqNum - 1; // Why initialized when it will be
         // overwritten
@@ -1433,8 +1410,8 @@ public class Session {
         } else if (beginString.compareTo("FIX.4.1") <= 0) {
             endSeqNo = 999999;
         }
-        resendRequest.setInt(BeginSeqNo.FIELD, beginSeqNo);
-        resendRequest.setInt(EndSeqNo.FIELD, endSeqNo);
+        resendRequest.setInt(ProtocolConstants.BeginSeqNo, beginSeqNo);
+        resendRequest.setInt(ProtocolConstants.EndSeqNo, endSeqNo);
         initializeHeader(resendRequest.getHeader());
         sendRaw(resendRequest, 0);
         getLog().onEvent("Sent ResendRequest FROM: " + beginSeqNo + " TO: " + endSeqNo);
@@ -1443,16 +1420,16 @@ public class Session {
 
     private boolean doPossDup(Message msg) throws FieldNotFound, IOException {
         Message.Header header = msg.getHeader();
-        String msgType = header.getString(MsgType.FIELD);
-        Date sendingTime = header.getUtcTimeStamp(SendingTime.FIELD);
+        String msgType = header.getString(ProtocolConstants.MsgType);
+        Date sendingTime = header.getUtcTimeStamp(ProtocolConstants.SendingTime);
 
-        if (!msgType.equals(MsgType.SEQUENCE_RESET)) {
-            if (!header.isSetField(OrigSendingTime.FIELD)) {
-                generateReject(msg, SessionRejectReason.REQUIRED_TAG_MISSING, OrigSendingTime.FIELD);
+        if (!msgType.equals(ProtocolConstants.MsgType_SEQUENCE_RESET)) {
+            if (!header.isSetField(ProtocolConstants.OrigSendingTime)) {
+                generateReject(msg, SessionRejectReason.REQUIRED_TAG_MISSING, ProtocolConstants.OrigSendingTime);
                 return false;
             }
 
-            Date origSendingTime = header.getUtcTimeStamp(OrigSendingTime.FIELD);
+            Date origSendingTime = header.getUtcTimeStamp(ProtocolConstants.OrigSendingTime);
             if (origSendingTime.compareTo(sendingTime) > 0) {
                 generateReject(msg, SessionRejectReason.SENDINGTIME_ACCURACY_PROBLEM, 0);
                 generateLogout();
@@ -1468,12 +1445,12 @@ public class Session {
     }
 
     private void generateLogon(Message otherLogon) throws FieldNotFound {
-        Message logon = messageFactory.create(sessionID.getBeginString(), MsgType.LOGON);
-        logon.setInt(EncryptMethod.FIELD, 0);
+        Message logon = messageFactory.create(sessionID.getBeginString(), ProtocolConstants.MsgType_LOGON);
+        logon.setInt(ProtocolConstants.EncryptMethod, 0);
         if (state.isResetReceived()) {
-            logon.setBoolean(ResetSeqNumFlag.FIELD, true);
+            logon.setBoolean(ProtocolConstants.ResetSeqNumFlag, true);
         }
-        logon.setInt(HeartBtInt.FIELD, otherLogon.getInt(HeartBtInt.FIELD));
+        logon.setInt(ProtocolConstants.HeartBtInt, otherLogon.getInt(ProtocolConstants.HeartBtInt));
         initializeHeader(logon.getHeader());
         sendRaw(logon, 0);
         state.setLogonSent(true);
@@ -1483,12 +1460,12 @@ public class Session {
         try {
             boolean result = false;
             Message.Header header = message.getHeader();
-            String msgType = header.getString(MsgType.FIELD);
+            String msgType = header.getString(ProtocolConstants.MsgType);
 
             initializeHeader(header);
 
             if (num > 0) {
-                header.setInt(MsgSeqNum.FIELD, num);
+                header.setInt(ProtocolConstants.MsgSeqNum, num);
             }
 
             String messageString = null;
@@ -1496,22 +1473,22 @@ public class Session {
             if (message.isAdmin()) {
                 application.toAdmin(message, sessionID);
 
-                if (msgType.equals(MsgType.LOGON) && !state.isResetReceived()) {
+                if (msgType.equals(ProtocolConstants.MsgType_LOGON) && !state.isResetReceived()) {
                     boolean resetSeqNumFlag = false;
-                    if (message.isSetField(ResetSeqNumFlag.FIELD)) {
-                        resetSeqNumFlag = message.getBoolean(ResetSeqNumFlag.FIELD);
+                    if (message.isSetField(ProtocolConstants.ResetSeqNumFlag)) {
+                        resetSeqNumFlag = message.getBoolean(ProtocolConstants.ResetSeqNumFlag);
                     }
                     if (resetSeqNumFlag) {
                         state.reset();
-                        message.getHeader().setInt(MsgSeqNum.FIELD, getExpectedSenderNum());
+                        message.getHeader().setInt(ProtocolConstants.MsgSeqNum, getExpectedSenderNum());
                     }
                     state.setResetSent(resetSeqNumFlag);
                 }
 
                 messageString = message.toString();
-                if (msgType.equals(MsgType.LOGON) || msgType.equals(MsgType.LOGOUT)
-                        || msgType.equals(MsgType.RESEND_REQUEST)
-                        || msgType.equals(MsgType.SEQUENCE_RESET) || isLoggedOn()) {
+                if (msgType.equals(ProtocolConstants.MsgType_LOGON) || msgType.equals(ProtocolConstants.MsgType_LOGOUT)
+                        || msgType.equals(ProtocolConstants.MsgType_RESEND_REQUEST)
+                        || msgType.equals(ProtocolConstants.MsgType_SEQUENCE_RESET) || isLoggedOn()) {
                     result = send(messageString);
                 }
             } else {
@@ -1527,7 +1504,7 @@ public class Session {
             }
 
             if (num == 0) {
-                int msgSeqNum = header.getInt(MsgSeqNum.FIELD);
+                int msgSeqNum = header.getInt(ProtocolConstants.MsgSeqNum);
                 if(persistMessages) {
                     state.set(msgSeqNum, messageString);
                 }
@@ -1559,8 +1536,8 @@ public class Session {
      * 
      */
     public boolean send(Message message) {
-        message.getHeader().removeField(PossDupFlag.FIELD);
-        message.getHeader().removeField(OrigSendingTime.FIELD);
+        message.getHeader().removeField(ProtocolConstants.PossDupFlag);
+        message.getHeader().removeField(ProtocolConstants.OrigSendingTime);
         return sendRaw(message, 0);
     }
 

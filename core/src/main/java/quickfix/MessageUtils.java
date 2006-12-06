@@ -19,40 +19,37 @@
 
 package quickfix;
 
-import quickfix.field.BeginString;
-import quickfix.field.SenderCompID;
-import quickfix.field.TargetCompID;
 import quickfix.Message.Header;
 
 public class MessageUtils {
 	public static SessionID getSessionID(Message fixMessage) {
 		Header header = fixMessage.getHeader();
 		return new SessionID(
-				getFieldOrDefault(header, BeginString.FIELD, null),
-				getFieldOrDefault(header, SenderCompID.FIELD, null),
-				getFieldOrDefault(header, TargetCompID.FIELD, null));
+				getFieldOrDefault(header, ProtocolConstants.BeginString, null),
+				getFieldOrDefault(header, ProtocolConstants.SenderCompID, null),
+				getFieldOrDefault(header, ProtocolConstants.TargetCompID, null));
 	}
 
     public static SessionID getSessionID(String messageString) {
         return new SessionID(
-                getStringField(messageString, BeginString.FIELD),
-                getStringField(messageString, SenderCompID.FIELD),
-                getStringField(messageString, TargetCompID.FIELD));
+                getStringField(messageString, ProtocolConstants.BeginString),
+                getStringField(messageString, ProtocolConstants.SenderCompID),
+                getStringField(messageString, ProtocolConstants.TargetCompID));
     }
 
 	public static SessionID getReverseSessionID(Message fixMessage) {
 		Header header = fixMessage.getHeader();
 		return new SessionID(
-				getFieldOrDefault(header, BeginString.FIELD, null),
-				getFieldOrDefault(header, TargetCompID.FIELD, null),
-				getFieldOrDefault(header, SenderCompID.FIELD, null));
+				getFieldOrDefault(header, ProtocolConstants.BeginString, null),
+				getFieldOrDefault(header, ProtocolConstants.TargetCompID, null),
+				getFieldOrDefault(header, ProtocolConstants.SenderCompID, null));
 	}
 
     public static SessionID getReverseSessionID(String messageString) {
         return new SessionID(
-                getStringField(messageString, BeginString.FIELD),
-                getStringField(messageString, TargetCompID.FIELD),
-                getStringField(messageString, SenderCompID.FIELD));
+                getStringField(messageString, ProtocolConstants.BeginString),
+                getStringField(messageString, ProtocolConstants.TargetCompID),
+                getStringField(messageString, ProtocolConstants.SenderCompID));
     }
 
 	private static String getFieldOrDefault(FieldMap fields, int tag,

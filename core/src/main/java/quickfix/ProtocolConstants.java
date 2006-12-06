@@ -1,0 +1,66 @@
+package quickfix;
+
+public class ProtocolConstants {
+    public static final int BeginString = 8;
+    public static final int BeginSeqNo = 7;
+    public static final int BodyLength = 9;
+    public static final int CheckSum = 10;
+    public static final int EndSeqNo = 16;
+    public static final int MsgSeqNum = 34;
+    public static final int MsgType = 35;
+    public static final int NewSeqNo = 36;
+    public static final int PossDupFlag = 43;
+    public static final int RefSeqNum = 45;
+    public static final int SenderCompID = 49;
+    public static final int SenderSubID = 50;
+    public static final int SendingTime = 52;
+    public static final int TargetCompID = 56;
+    public static final int TargetSubID = 57;
+    public static final int TransactTime = 60;
+    public static final int Signature = 89;
+    public static final int SecureDataLen = 90;
+    public static final int SecureData = 91;
+    public static final int SignatureLength = 93;
+    public static final int RawDataLength = 95;
+    public static final int RawData = 96;
+    public static final int PossResend = 97;
+    public static final int EncryptMethod = 98;
+    public static final int HeartBtInt = 108;
+    public static final int OnBehalfOfCompID = 115;
+    public static final int OnBehalfOfSubID = 116;
+    public static final int OrigSendingTime = 122;
+    public static final int GapFillFlag = 123;
+    public static final int DeliverToCompID = 128;
+    public static final int DeliverToSubID = 129;
+    public static final int ResetSeqNumFlag = 141;
+    public static final int SenderLocationID = 142;
+    public static final int TargetLocationID = 143;
+    public static final int OnBehalfOfLocationID = 144;
+    public static final int DeliverToLocationID = 145;
+    public static final int XmlDataLen = 212;
+    public static final int XmlData = 213;
+    public static final int LocationID = 283;
+    public static final int LastMsgSeqNumProcessed = 369;
+    public static final int RefTagID = 371;
+    public static final int RefMsgType = 372;
+    public static final int SessionRejectReason = 373;
+    public static final int BusinessRejectRefID = 379;
+    public static final int BusinessRejectReason = 380;
+    public static final int MaxMessageSize = 383;
+    public static final int NoMsgTypes = 384;
+    public static final int MsgDirection = 385;
+    public static final int MessageEncoding = 347;
+    public static final int OnBehalfOfSendingTime = 370;
+    public static final int Text = 58;
+    public static final int TestReqID = 112;
+
+    public static final String MsgType_HEARTBEAT = "0"; 
+    public static final String MsgType_TEST_REQUEST = "1"; 
+    public static final String MsgType_RESEND_REQUEST = "2"; 
+    public static final String MsgType_REJECT = "3"; 
+    public static final String MsgType_SEQUENCE_RESET = "4"; 
+    public static final String MsgType_LOGOUT = "5"; 
+    public static final String MsgType_LOGON = "A"; 
+    public static final String MsgType_BUSINESS_MESSAGE_REJECT = "j"; 
+
+}

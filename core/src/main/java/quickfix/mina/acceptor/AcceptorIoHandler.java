@@ -28,8 +28,6 @@ import quickfix.Message;
 import quickfix.MessageUtils;
 import quickfix.Session;
 import quickfix.SessionID;
-import quickfix.field.HeartBtInt;
-import quickfix.field.MsgType;
 import quickfix.mina.AbstractIoHandler;
 import quickfix.mina.EventHandlingStrategy;
 import quickfix.mina.IoSessionResponder;
@@ -37,6 +35,9 @@ import quickfix.mina.NetworkingOptions;
 import quickfix.mina.SessionConnector;
 
 class AcceptorIoHandler extends AbstractIoHandler {
+    private final int HeartBtInt_FIELD = 8;
+    private final int MsgType_FIELD = 35;
+    private final String Logon_MsgType = "A";
     private final Map acceptorSessions;
 
     private final EventHandlingStrategy eventHandlingStrategy;
@@ -58,7 +59,7 @@ class AcceptorIoHandler extends AbstractIoHandler {
         SessionID sessionID = MessageUtils.getReverseSessionID(message);
         Session qfSession = (Session) protocolSession.getAttribute(SessionConnector.QF_SESSION);
         if (qfSession == null) {
-            if (message.getHeader().getString(MsgType.FIELD).equals(MsgType.LOGON)) {
+            if (message.getHeader().getString(MsgType_FIELD).equals(Logon_MsgType)) {
                 qfSession = (Session) acceptorSessions.get(sessionID);
                 if (qfSession != null) {
                     Log sessionLog = qfSession.getLog();
@@ -71,7 +72,7 @@ class AcceptorIoHandler extends AbstractIoHandler {
                     }
                     sessionLog.onEvent("Accepting session " + qfSession.getSessionID() + " from "
                             + protocolSession.getRemoteAddress());
-                    int heartbeatInterval = message.getInt(HeartBtInt.FIELD);
+                    int heartbeatInterval = message.getInt(HeartBtInt_FIELD);
                     qfSession.getState().setHeartBeatInterval(heartbeatInterval);
                     sessionLog.onEvent("Acceptor heartbeat set to " + heartbeatInterval
                             + " seconds");

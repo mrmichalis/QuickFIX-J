@@ -21,7 +21,6 @@ package quickfix;
 
 import java.io.PrintStream;
 
-import quickfix.field.MsgType;
 import quickfix.field.converter.UtcTimestampConverter;
 
 /**
@@ -35,6 +34,7 @@ public class ScreenLog implements Log {
     private static final String EVENT_CATEGORY = "event";
     private static final String OUTGOING_CATEGORY = "outgoing";
     private static final String INCOMING_CATEGORY = "incoming";
+    private static final String MsgType_HEARTBEAT = "0";
     private PrintStream out;
     private final SessionID sessionID;
     private final boolean incoming;
@@ -66,7 +66,7 @@ public class ScreenLog implements Log {
 
     private void logMessage(String message, String type) {
         try {
-            if (!heartBeats && MsgType.HEARTBEAT.equals(MessageUtils.getMessageType(message))) {
+            if (!heartBeats && MsgType_HEARTBEAT.equals(MessageUtils.getMessageType(message))) {
                 return;
             }
         } catch (InvalidMessage e) {

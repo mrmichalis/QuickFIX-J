@@ -20,28 +20,25 @@
 package quickfix;
 
 import junit.framework.TestCase;
-import quickfix.field.BeginString;
-import quickfix.field.SenderCompID;
-import quickfix.field.TargetCompID;
 
 public class SessionIDTest extends TestCase {
-    public void testFromFields() throws Exception {
-        SessionID sessionID = new SessionID(new BeginString("FIX.4.2"), new SenderCompID("SENDER"),
-                new TargetCompID("TARGET"), "QUALIFIER");
-        assertEquals("FIX.4.2", sessionID.getBeginString());
-        assertEquals("SENDER", sessionID.getSenderCompID());
-        assertEquals("TARGET", sessionID.getTargetCompID());
-        assertEquals("QUALIFIER", sessionID.getSessionQualifier());
-    }
-
-    public void testFromFieldsWithoutQualifier() throws Exception {
-        SessionID sessionID = new SessionID(new BeginString("FIX.4.2"), new SenderCompID("SENDER"),
-                new TargetCompID("TARGET"));
-        assertEquals("FIX.4.2", sessionID.getBeginString());
-        assertEquals("SENDER", sessionID.getSenderCompID());
-        assertEquals("TARGET", sessionID.getTargetCompID());
-        assertEquals("", sessionID.getSessionQualifier());
-    }
+//    public void testFromFields() throws Exception {
+//        SessionID sessionID = new SessionID(new BeginString("FIX.4.2"), new SenderCompID("SENDER"),
+//                new TargetCompID("TARGET"), "QUALIFIER");
+//        assertEquals("FIX.4.2", sessionID.getBeginString());
+//        assertEquals("SENDER", sessionID.getSenderCompID());
+//        assertEquals("TARGET", sessionID.getTargetCompID());
+//        assertEquals("QUALIFIER", sessionID.getSessionQualifier());
+//    }
+//
+//    public void testFromFieldsWithoutQualifier() throws Exception {
+//        SessionID sessionID = new SessionID(new BeginString("FIX.4.2"), new SenderCompID("SENDER"),
+//                new TargetCompID("TARGET"));
+//        assertEquals("FIX.4.2", sessionID.getBeginString());
+//        assertEquals("SENDER", sessionID.getSenderCompID());
+//        assertEquals("TARGET", sessionID.getTargetCompID());
+//        assertEquals("", sessionID.getSessionQualifier());
+//    }
 
     public void testFromString() throws Exception {
         SessionID sessionID = new SessionID((String) null, (String) null, (String) null);
