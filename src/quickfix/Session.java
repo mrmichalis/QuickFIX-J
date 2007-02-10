@@ -268,7 +268,7 @@ public class Session {
      *
      * @param responder a responder implementation
      */
-    public void setResponder(Responder responder) {
+    public synchronized void setResponder(Responder responder) {
         this.responder = responder;
     }
 
