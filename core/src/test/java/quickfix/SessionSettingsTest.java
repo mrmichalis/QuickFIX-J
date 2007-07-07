@@ -115,23 +115,25 @@ public class SessionSettingsTest extends TestCase {
         settingsString += "TestDouble2=abcd\n";
         settingsString += "TestBoolTrue=Y\n";
         settingsString += "TestBoolFalse=N\n";
+        settingsString += "SenderCompID=TW\n";
         settingsString += "\r\n";
         settingsString += "[SESSION]\n";
         settingsString += "BeginString=FIX.4.2\n";
-        settingsString += "SenderCompID=TW\n";
         settingsString += "TargetCompID=CLIENT1\n";
         settingsString += "DataDictionary=../spec/FIX42.xml\n";
         settingsString += "\n";
         settingsString += "[SESSION]\n";
         settingsString += "BeginString=FIX.4.2\n";
-        settingsString += "SenderCompID=TW\n";
         settingsString += "TargetCompID=CLIENT2\n";
         settingsString += "DataDictionary=../spec/FIX42.xml\n";
         if (extra != null) {
             settingsString += extra;
         }
-        ByteArrayInputStream cfg = new ByteArrayInputStream(settingsString.getBytes());
+        return createSettingsFromString(settingsString);
+    }
 
+    private static SessionSettings createSettingsFromString(String settingsString) throws ConfigError {
+        ByteArrayInputStream cfg = new ByteArrayInputStream(settingsString.getBytes());
         return new SessionSettings(cfg);
     }
 
@@ -211,6 +213,24 @@ public class SessionSettingsTest extends TestCase {
         assertEquals("wrong default value", "ABC FOO XYZ FOOBAR 123", settings.getString("VariableTest"));
     }
     
+    // QFJ-204
+    public void testVariableInterpolationInDefaultSection() throws Exception {
+        System.setProperty("sender", "SENDER");
+        System.setProperty("target", "TARGET");
+        String settingsString = "";
+        settingsString += "[DEFAULT]\n";
+        settingsString += "SenderCompID=${sender}\n";
+        settingsString += "[SESSION]\n";
+        settingsString += "BeginString=FIX.4.2\n";
+        settingsString += "TargetCompID=${target}\n";
+        SessionSettings settings = createSettingsFromString(settingsString);
+        assertEquals("wrong value", "SENDER", settings.getString("SenderCompID"));
+        SessionID sessionID = new SessionID("FIX.4.2", "SENDER", "TARGET");
+        assertEquals("wrong value", "SENDER", settings.getString(sessionID, "SenderCompID"));
+        assertEquals("wrong value", "TARGET", settings.getString(sessionID, "TargetCompID"));
+        
+
+    }
     public void testVariableInterpolationWithNoSysProps() throws Exception {
         System.setProperty("test.1", "FOO");
         System.setProperty("test.2", "BAR");
