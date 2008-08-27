@@ -35,7 +35,9 @@ public class IoSessionResponder implements Responder {
     }
 
     public boolean send(String data) {
-        return ioSession.write(data).isWritten();
+        // The data is written asynchronously in a MINA thread
+        ioSession.write(data);
+        return true;
     }
 
     public void disconnect() {
