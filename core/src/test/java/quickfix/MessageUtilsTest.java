@@ -32,6 +32,8 @@ import quickfix.field.TargetCompID;
 import quickfix.fix40.Logon;
 
 public class MessageUtilsTest extends TestCase {
+    // TODO FIX50 Test FIXT message parsing
+    
     public void testGetStringField() throws Exception {
         String messageString = "8=FIX.4.2\0019=12\00135=X\001108=30\00110=049\001";
         assertEquals("wrong value", "FIX.4.2", MessageUtils.getStringField(messageString,

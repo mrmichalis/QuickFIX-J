@@ -95,17 +95,15 @@ public class MessageUtils {
 		}
 	}
 
-	public static Message parse(MessageFactory messageFactory,
-			DataDictionary dataDictionary, String messageString)
-			throws InvalidMessage {
-		String beginString = messageString.substring(2, 9);
-		String messageType = getMessageType(messageString);
-		quickfix.Message message = messageFactory.create(beginString,
-				messageType);
-		message.fromString(messageString, dataDictionary,
-				dataDictionary != null);
-		return message;
-	}
+	public static Message parse(MessageFactory messageFactory, DataDictionary dataDictionary,
+            String messageString) throws InvalidMessage {
+        int index = messageString.indexOf(1);
+        String beginString = messageString.substring(2, index);
+        String messageType = getMessageType(messageString);
+        quickfix.Message message = messageFactory.create(beginString, messageType);
+        message.fromString(messageString, dataDictionary, dataDictionary != null);
+        return message;
+    }
 
 	public static String getStringField(String messageString, int tag) {
 		String tagString = Integer.toString(tag);

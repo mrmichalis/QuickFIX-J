@@ -17,40 +17,47 @@
  * are not clear to you.
  ******************************************************************************/
 
-
 package quickfix;
 
 import quickfix.field.*;
 
 /**
- * Helper class for delegating message types for various FIX versions
- * to type-safe onMessage methods.
+ * Helper class for delegating message types for various FIX versions to
+ * type-safe onMessage methods.
  */
-public class MessageCracker extends quickfix.fix44.MessageCracker {
+public class MessageCracker extends quickfix.fix50.MessageCracker {
 
     /**
-     * Process ("crack") a FIX message and call the type-safe onMessage
-     * method for that message type and FIX version.
+     * Process ("crack") a FIX message and call the type-safe onMessage method for
+     * that message type and FIX version.
      */
-    public void crack( quickfix.Message message, SessionID sessionID )
-    throws UnsupportedMessageType, FieldNotFound, IncorrectTagValue {
+    public void crack(quickfix.Message message, SessionID sessionID) throws UnsupportedMessageType,
+            FieldNotFound, IncorrectTagValue {
 
         BeginString beginString = new BeginString();
         message.getHeader().getField(beginString);
         String value = beginString.getValue();
 
-        if(value.equals("FIX.4.0"))
-            crack40((quickfix.fix40.Message)message, sessionID);
-        else if(value.equals("FIX.4.1"))
-            crack41((quickfix.fix41.Message)message, sessionID);
-        else if(value.equals("FIX.4.2"))
-            crack42((quickfix.fix42.Message)message, sessionID);
-        else if(value.equals("FIX.4.3"))
-            crack43((quickfix.fix43.Message)message, sessionID);
-        else if(value.equals("FIX.4.4"))
-            crack44((quickfix.fix44.Message)message, sessionID);
-        else
+        if (value.equals("FIX.4.0")) {
+            crack40((quickfix.fix40.Message) message, sessionID);
+        } else if (value.equals("FIX.4.1")) {
+            crack41((quickfix.fix41.Message) message, sessionID);
+        } else if (value.equals("FIX.4.2")) {
+            crack42((quickfix.fix42.Message) message, sessionID);
+        } else if (value.equals("FIX.4.3")) {
+            crack43((quickfix.fix43.Message) message, sessionID);
+        } else if (value.equals("FIX.4.4")) {
+            crack44((quickfix.fix44.Message) message, sessionID);
+        } else if (value.equals("FIXT.1.1")) {
+            if (ApplVerID.FIX50.equals(message.getHeader().getString(ApplVerID.FIELD))) {
+                crack50((quickfix.fix50.Message) message, sessionID);
+            } else {
+                // TODO FIX50 Will this fail if ApplVerID is not FIX5.0?
+                onMessage(message, sessionID);
+            }
+        } else {
             onMessage(message, sessionID);
+        }
     }
 
 }

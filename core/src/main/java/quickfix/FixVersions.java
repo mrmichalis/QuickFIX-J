@@ -28,4 +28,9 @@ public interface FixVersions {
     public static final String BEGINSTRING_FIX42 = "FIX.4.2";
     public static final String BEGINSTRING_FIX43 = "FIX.4.3";
     public static final String BEGINSTRING_FIX44 = "FIX.4.4";
+    
+    // See quickfix.field.ApplVerID for FIXT.1.1 FIX version codes
+    public static final String BEGINSTRING_FIXT11 = "FIXT.1.1";
+
+    public static final String FIXT_SESSION_PREFIX = "FIXT.";
 }

@@ -19,15 +19,18 @@
 
 package quickfix;
 
+import static quickfix.SessionSettings.*;
+
 import java.util.Hashtable;
 import java.util.Map;
+
+import quickfix.field.ApplVerID;
 
 /**
  * Factory for creating sessions. Used by the communications code (acceptors,
  * initiators) for creating sessions.
  */
 public class DefaultSessionFactory implements SessionFactory {
-
     private static final Map<String,DataDictionary> dictionaryCache = new Hashtable<String,DataDictionary>(); // synchronized
     private final Application application;
     private final MessageStoreFactory messageStoreFactory;
@@ -86,8 +89,24 @@ public class DefaultSessionFactory implements SessionFactory {
                 if (settings.isSetting(sessionID, Session.SETTING_DATA_DICTIONARY)) {
                     path = settings.getString(sessionID, Session.SETTING_DATA_DICTIONARY);
                 } else {
-                    path = settings.getString(sessionID, "BeginString").replaceAll("\\.", "")
-                            + ".xml";
+                    String beginString = settings.getString(sessionID, BEGINSTRING);
+                    if (!beginString.startsWith(FixVersions.FIXT_SESSION_PREFIX)) {
+                        path = beginString.replaceAll("\\.", "") + ".xml";
+                    } else {
+                        // TODO FIX50 The data dictionary lookup needs review
+                        // TODO FIX50 Write tests for data dictionary lookup
+                        String applVerID = ApplVerID.FIX50;
+                        try {
+                            applVerID = settings.getString(APPL_VER_ID);
+                        } catch (ConfigError e) {
+                            // Ignore it we just default to FIX 5.0
+                        }
+                        if (ApplVerID.FIX50.equals(applVerID)) {
+                            path = "FIX50.xml";
+                        } else {
+                            path = "FIX50.xml";
+                        }
+                    }
                 }
                 
                 dataDictionary = getDataDictionary(path);

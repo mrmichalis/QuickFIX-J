@@ -35,7 +35,11 @@ public class DefaultMessageFactory implements quickfix.MessageFactory {
         new quickfix.fix43.MessageFactory();
     private quickfix.fix44.MessageFactory fix44Factory =
     	new quickfix.fix44.MessageFactory();
+    private quickfix.fix50.MessageFactory fix50Factory =
+    	new quickfix.fix50.MessageFactory();
 
+	// TODO FIX50 Do we need both the beginString and ApplVerID to create message?
+	
     public Message create(String beginString, String msgType) {
         if("FIX.4.0".equals(beginString)) {
             return fix40Factory.create(beginString, msgType);
@@ -50,7 +54,10 @@ public class DefaultMessageFactory implements quickfix.MessageFactory {
             return fix43Factory.create(beginString, msgType);
         }
         if("FIX.4.4".equals(beginString)) {
-		    return fix44Factory.create(beginString, msgType);
+	    return fix44Factory.create(beginString, msgType);
+        }
+        if("FIXT.1.1".equals(beginString)) {
+	    return fix50Factory.create(beginString, msgType);
         }
         return new Message();
     }
@@ -69,7 +76,10 @@ public class DefaultMessageFactory implements quickfix.MessageFactory {
             return fix43Factory.create(beginString, msgType, correspondingFieldID);
         }
         if("FIX.4.4".equals(beginString)) {
-		    return fix44Factory.create(beginString, msgType, correspondingFieldID);
+	    return fix44Factory.create(beginString, msgType, correspondingFieldID);
+        }
+        if("FIXT.1.1".equals(beginString)) {
+	    return fix50Factory.create(beginString, msgType, correspondingFieldID);
         }
         throw new IllegalArgumentException("Unsupported FIX version: "+beginString);
     }

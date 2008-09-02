@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import junit.framework.TestCase;
 import quickfix.field.AllocAccount;
 import quickfix.field.AllocShares;
+import quickfix.field.ApplVerID;
 import quickfix.field.AvgPx;
 import quickfix.field.BeginString;
 import quickfix.field.BidType;
@@ -37,6 +38,7 @@ import quickfix.field.CountryOfIssue;
 import quickfix.field.CrossID;
 import quickfix.field.CrossPrioritization;
 import quickfix.field.CrossType;
+import quickfix.field.CstmApplVerID;
 import quickfix.field.CumQty;
 import quickfix.field.EncodedText;
 import quickfix.field.EncodedTextLen;
@@ -378,6 +380,11 @@ public class MessageTest extends TestCase {
         }
     }
 
+    public void testFix5HeaderFields() {
+        assertTrue(Message.isHeaderField(ApplVerID.FIELD));
+        assertTrue(Message.isHeaderField(CstmApplVerID.FIELD));
+    }
+    
     public void testCalculateStringWithNestedGroups() throws Exception {
         NewOrderCross noc = new NewOrderCross();
         noc.getHeader().setString(BeginString.FIELD, FixVersions.BEGINSTRING_FIX44);

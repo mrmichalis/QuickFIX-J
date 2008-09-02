@@ -65,6 +65,7 @@ import quickfix.FieldNotFound;
 
 public class <xsl:value-of select="@name"/> extends <xsl:value-of select="$baseClass"/>
 {
+
   static final long serialVersionUID = <xsl:value-of select="$serialVersionUID"/>;
   <xsl:if test="$baseClass = 'quickfix.MessageComponent'">
   private int[] componentFields = { <xsl:apply-templates select="field|component" mode="component-field-numbers"/> };
@@ -113,28 +114,60 @@ import quickfix.Group;</xsl:when>
         <xsl:call-template name="extra-imports-component">
           <xsl:with-param name="components" select="component"/>
   	      <xsl:with-param name="position" select="1"/>
+					<xsl:with-param name="components2" select="/fix/components/component[@name=./@name]/component"/>
+  	      <xsl:with-param name="position2" select="1"/>
         </xsl:call-template>
       </xsl:otherwise>
     </xsl:choose>
-  </xsl:template>
-    
+	</xsl:template>
+
+	<!-- Modified this template to recurse across components in search of groups -->    
   <xsl:template name="extra-imports-component">
     <xsl:param name="components"/>
     <xsl:param name="position"/>
-    <xsl:if test="$position &lt;= count($components)">
-      <xsl:variable name="name" select="$components[$position]/@name"/>
-   	  <xsl:variable name="group" select="/fix/components/component[@name=$name]/group[1]"/>
-      <xsl:choose>
-        <xsl:when test="$group">
+    <xsl:param name="components2"/>
+    <xsl:param name="position2"/>
+		<xsl:if test="count($components2) >= $position2 or count($components) >= $position">
+		<xsl:variable name="name">
+			<xsl:choose>
+				<xsl:when test="count($components2) >= $position2">
+					<xsl:value-of select="$components2[$position2]/@name"/>
+				</xsl:when>
+					<xsl:when test="count($components) >= $position">
+						<xsl:value-of  select="$components[$position]/@name"/>
+					</xsl:when>
+				</xsl:choose>
+			</xsl:variable>
+ 			<xsl:variable name="group" select="/fix/components/component[@name=$name]/group[1]"/>
+    	<xsl:choose>
+				<xsl:when test="$group">
 import quickfix.Group;</xsl:when>
-        <xsl:otherwise>
-          <xsl:call-template name="extra-imports-component">
-            <xsl:with-param name="components" select="$components"/>
-            <xsl:with-param name="position" select="$position + 1"/>
-          </xsl:call-template>
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:if>
+				<xsl:otherwise>
+					<xsl:choose>
+						<xsl:when	test="count($components2) >= $position2">
+     		  		<xsl:call-template name="extra-imports-component">
+       		  		<xsl:with-param name="components" select="$components"/>
+		         		<xsl:with-param name="position" select="$position"/>
+   		    		  <xsl:with-param name="components2" select="$components2"/>
+     		   			<xsl:with-param name="position2" select="$position2 + 1"/>
+		 		      </xsl:call-template>
+						</xsl:when>
+						<xsl:otherwise>
+							<xsl:variable name="name2">
+								<xsl:value-of  select="$components[$position+1]/@name"/>
+							</xsl:variable>
+							<xsl:variable name="comp2" select="/fix/components/component[@name=$name2]/component"/>
+			      	<xsl:call-template name="extra-imports-component">
+ 	    		    	<xsl:with-param name="components" select="$components"/>
+	   		      	<xsl:with-param name="position" select="$position + 1"/>
+			        	<xsl:with-param name="components2" select="$comp2"/>
+ 	        			<xsl:with-param name="position2" select="1"/>
+ 	      			</xsl:call-template>
+ 	    			</xsl:otherwise>
+ 	  			</xsl:choose>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:if>
   </xsl:template>
   
 	  <!-- *********************************************************************
@@ -149,7 +182,6 @@ import quickfix.Group;</xsl:when>
     <xsl:variable name="groupFieldName" select="@name"/>
   public static class <xsl:value-of select="@name"/> extends Group {
     static final long serialVersionUID = <xsl:value-of select="$serialVersionUID"/>;
-    
     public <xsl:value-of select="@name"/>() {
         super(<xsl:value-of select="/fix/fields/field[@name=$groupFieldName]/@number"/>, <xsl:apply-templates select="field|component|group" mode="group-delimeter"/>,
             new int[] {<xsl:apply-templates select="field|component|group" mode="group-field-numbers"/> 0 } );

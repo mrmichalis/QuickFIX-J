@@ -76,6 +76,7 @@ public class SessionSettings {
     public static final String TARGETCOMPID = "TargetCompID";
     public static final String TARGETSUBID = "TargetSubID";
     public static final String TARGETLOCID = "TargetLocationID";
+    public static final String APPL_VER_ID = "ApplVerID";
 
     public static final String SESSION_QUALIFIER = "SessionQualifier";
 

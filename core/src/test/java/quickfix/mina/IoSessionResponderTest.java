@@ -39,7 +39,6 @@ public class IoSessionResponderTest extends TestCase {
         IoSessionResponder responder = new IoSessionResponder(mockIoSession);
         responder.send("abcd");
         
-        verify(mockWriteFuture).isWritten();
         verify(mockIoSession).write("abcd");
 
         verifyNoMoreInteractions(mockWriteFuture);
