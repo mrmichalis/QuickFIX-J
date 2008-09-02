@@ -44,12 +44,16 @@ public void onMessage( quickfix.Message message, SessionID sessionID ) throws Fi
 
 <xsl:template name="virtual-functions">
  <xsl:for-each select="//fix/messages/message"> public void onMessage( <xsl:value-of select="@name"/> message, SessionID sessionID ) throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue
- <xsl:if test="@msgcat='app' and @name!='BusinessMessageReject'">   { throw new UnsupportedMessageType(); }
- </xsl:if>
- <xsl:if test="@msgcat='app' and @name='BusinessMessageReject'">   {}
- </xsl:if>
- <xsl:if test="@msgcat='admin'">   {}
- </xsl:if>
+ <xsl:choose>
+ <xsl:when test="(@msgcat='app' or @msgcat='Common') and @name='BusinessMessageReject'">   {}
+ </xsl:when>
+ <xsl:when test="@msgcat='admin'">   {}
+ </xsl:when>
+ <xsl:when test="@msgcat='Session'">   {}
+ </xsl:when>
+ <xsl:otherwise>   { throw new UnsupportedMessageType(); }
+ </xsl:otherwise>
+ </xsl:choose>
 </xsl:for-each>
 </xsl:template>
 
@@ -81,6 +85,10 @@ public void onMessage( quickfix.Message message, SessionID sessionID ) throws Fi
    <xsl:if test="//fix/@minor='3'">extends quickfix.fix42.MessageCracker</xsl:if>
    <xsl:if test="//fix/@minor='4'">extends quickfix.fix43.MessageCracker</xsl:if>
  </xsl:if>
+ <xsl:if test="//fix/@major='5'">
+   <xsl:if test="//fix/@minor='0'">extends quickfix.fix44.MessageCracker</xsl:if>
+ </xsl:if>
 </xsl:template>
 
 </xsl:stylesheet>
+
