@@ -29,8 +29,13 @@ public interface FixVersions {
     public static final String BEGINSTRING_FIX43 = "FIX.4.3";
     public static final String BEGINSTRING_FIX44 = "FIX.4.4";
     
-    // See quickfix.field.ApplVerID for FIXT.1.1 FIX version codes
-    public static final String BEGINSTRING_FIXT11 = "FIXT.1.1";
+    /**
+     * FIX 5.0 does not have a begin string.
+     */
+    public static final String FIX50 = "FIX.5.0";
 
+    // FIXT.x.x support
+    
     public static final String FIXT_SESSION_PREFIX = "FIXT.";
+    public static final String BEGINSTRING_FIXT11 = FIXT_SESSION_PREFIX + "1.1";
 }

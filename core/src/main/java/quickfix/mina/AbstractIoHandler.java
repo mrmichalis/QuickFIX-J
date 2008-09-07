@@ -19,6 +19,8 @@
 
 package quickfix.mina;
 
+import static quickfix.MessageUtils.*;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 
@@ -30,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import quickfix.DataDictionary;
+import quickfix.DataDictionaryProvider;
+import quickfix.FixVersions;
 import quickfix.InvalidMessage;
 import quickfix.LogUtil;
 import quickfix.Message;
@@ -37,6 +41,11 @@ import quickfix.MessageFactory;
 import quickfix.MessageUtils;
 import quickfix.Session;
 import quickfix.SessionID;
+import quickfix.field.ApplVerID;
+import quickfix.field.BeginString;
+import quickfix.field.CstmApplVerID;
+import quickfix.field.DefaultApplVerID;
+import quickfix.field.MsgType;
 
 /**
  * Abstract class used for acceptor and initiator IO handlers.
@@ -107,10 +116,10 @@ public abstract class AbstractIoHandler extends IoHandlerAdapter {
         Session quickFixSession = findQFSession(ioSession, remoteSessionID);
         if (quickFixSession != null) {
             quickFixSession.getLog().onIncoming(messageString);
-            MessageFactory messageFactory = quickFixSession.getMessageFactory();
-            DataDictionary dataDictionary = quickFixSession.getDataDictionary();
+            
+             
             try {
-                Message fixMessage = MessageUtils.parse(messageFactory, dataDictionary, messageString);
+                Message fixMessage = parse(quickFixSession, messageString);
                 processMessage(ioSession, fixMessage);
             } catch (InvalidMessage e) {
                 log.error("Invalid message: " + e.getMessage());

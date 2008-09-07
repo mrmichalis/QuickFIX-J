@@ -439,13 +439,19 @@ public class Message extends FieldMap {
     }
 
     public void fromString(String messageData, DataDictionary dd, boolean doValidation)
+    throws InvalidMessage {
+        parse(messageData, dd, dd, doValidation);
+    }
+    
+    void parse(String messageData, DataDictionary sessionDataDictionary, 
+            DataDictionary applicationDataDictionary, boolean doValidation)
             throws InvalidMessage {
         this.messageData = messageData;
 
         try {
-            parseHeader(dd, doValidation);
-            parseBody(dd);
-            parseTrailer(dd);
+            parseHeader(sessionDataDictionary, doValidation);
+            parseBody(applicationDataDictionary);
+            parseTrailer(sessionDataDictionary);
             if (doValidation) {
                 validateCheckSum(messageData);
             }

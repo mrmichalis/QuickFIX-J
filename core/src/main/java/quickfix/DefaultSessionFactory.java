@@ -82,7 +82,7 @@ public class DefaultSessionFactory implements SessionFactory {
                         .getBool(sessionID, Session.SETTING_USE_DATA_DICTIONARY);
             }
 
-            DataDictionary dataDictionary = null;
+            DefaultDataDictionaryProvider dataDictionaryProvider = null;
             
             if (useDataDictionary) {
                 String path;
@@ -109,7 +109,7 @@ public class DefaultSessionFactory implements SessionFactory {
                     }
                 }
                 
-                dataDictionary = getDataDictionary(path);
+                DataDictionary dataDictionary = getDataDictionary(path);
 
                 if (settings.isSetting(sessionID, Session.SETTING_VALIDATE_FIELDS_OUT_OF_ORDER)) {
                     dataDictionary.setCheckFieldsOutOfOrder(settings.getBool(sessionID,
@@ -130,8 +130,14 @@ public class DefaultSessionFactory implements SessionFactory {
                     dataDictionary.setAllowUnknownMessageFields(settings.getBool(sessionID,
                             Session.SETTING_ALLOW_UNKNOWN_MSG_FIELDS));
                 }
+
+                dataDictionaryProvider = new DefaultDataDictionaryProvider();
+                dataDictionaryProvider.addSessionDictionary(sessionID.getBeginString(), dataDictionary);
+                dataDictionaryProvider.addApplicationDictionary(MessageUtils.toApplVerID(sessionID
+                        .getBeginString()), null, dataDictionary);
             }
 
+            
             int heartbeatInterval = 0;
             if (connectionType.equals(SessionFactory.INITIATOR_CONNECTION_TYPE)) {
                 heartbeatInterval = (int) settings.getLong(sessionID, Session.SETTING_HEARTBTINT);
@@ -179,7 +185,7 @@ public class DefaultSessionFactory implements SessionFactory {
             int logoutTimeout = getSetting(settings, sessionID, Session.SETTING_LOGOUT_TIMEOUT, 2);
 
             Session session = new Session(application, messageStoreFactory, sessionID,
-                    dataDictionary, new SessionSchedule(settings, sessionID), logFactory,
+                    dataDictionaryProvider, new SessionSchedule(settings, sessionID), logFactory,
                     messageFactory, heartbeatInterval, checkLatency, maxLatency, millisInTimestamp,
                     resetOnLogon, resetOnLogout, resetOnDisconnect, refreshAtLogon,
                     checkCompID, redundantResentRequestAllowed, persistMessages,

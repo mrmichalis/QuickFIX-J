@@ -19,67 +19,58 @@
 
 package quickfix;
 
+import static quickfix.FixVersions.*;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * The default factory for creating FIX message instances. Create subclasses
  * of this factory for generating custom messages using nonstandard message
  * types.
  */
-public class DefaultMessageFactory implements quickfix.MessageFactory {
-    private quickfix.fix40.MessageFactory fix40Factory =
-        new quickfix.fix40.MessageFactory();
-    private quickfix.fix41.MessageFactory fix41Factory =
-        new quickfix.fix41.MessageFactory();
-    private quickfix.fix42.MessageFactory fix42Factory =
-        new quickfix.fix42.MessageFactory();
-    private quickfix.fix43.MessageFactory fix43Factory =
-        new quickfix.fix43.MessageFactory();
-    private quickfix.fix44.MessageFactory fix44Factory =
-    	new quickfix.fix44.MessageFactory();
-    private quickfix.fix50.MessageFactory fix50Factory =
-    	new quickfix.fix50.MessageFactory();
+public class DefaultMessageFactory implements MessageFactory {
+    private final Map<String,MessageFactory> messageFactories
+        = new ConcurrentHashMap<String,MessageFactory>();
 
-	// TODO FIX50 Do we need both the beginString and ApplVerID to create message?
+    public DefaultMessageFactory() {
+        // To loosen the coupling between this factory and generated code, the
+        // message factories are discovered at run time using reflection.
+        discoverFactory(BEGINSTRING_FIX40, "quickfix.fix40.MessageFactory");
+        discoverFactory(BEGINSTRING_FIX41, "quickfix.fix41.MessageFactory");
+        discoverFactory(BEGINSTRING_FIX42, "quickfix.fix42.MessageFactory");
+        discoverFactory(BEGINSTRING_FIX43, "quickfix.fix43.MessageFactory");
+        discoverFactory(BEGINSTRING_FIX44, "quickfix.fix44.MessageFactory");
+        discoverFactory(FIX50, "quickfix.fix50.MessageFactory");
+    }
+
+    private void discoverFactory(String beginString, String factoryClassName) {
+        try {
+            messageFactories.put(beginString, (MessageFactory) Class.forName(
+                    factoryClassName).newInstance());
+        } catch (InstantiationException e) {
+            // ignored
+        } catch (IllegalAccessException e) {
+            // ignored
+        } catch (ClassNotFoundException e) {
+            // ignored
+        }
+    }
+    
+    // TODO FIX50 Do we need both the beginString and ApplVerID to create message?
 	
     public Message create(String beginString, String msgType) {
-        if("FIX.4.0".equals(beginString)) {
-            return fix40Factory.create(beginString, msgType);
-        }
-        if("FIX.4.1".equals(beginString)) {
-            return fix41Factory.create(beginString, msgType);
-        }
-        if("FIX.4.2".equals(beginString)) {
-            return fix42Factory.create(beginString, msgType);
-        }
-        if("FIX.4.3".equals(beginString)) {
-            return fix43Factory.create(beginString, msgType);
-        }
-        if("FIX.4.4".equals(beginString)) {
-	    return fix44Factory.create(beginString, msgType);
-        }
-        if("FIXT.1.1".equals(beginString)) {
-	    return fix50Factory.create(beginString, msgType);
+        MessageFactory messageFactory = messageFactories.get(beginString);
+        if (messageFactory != null) {
+            return messageFactory.create(beginString, msgType);
         }
         return new Message();
     }
 
     public Group create(String beginString, String msgType, int correspondingFieldID) {
-        if("FIX.4.0".equals(beginString)) {
-            return fix40Factory.create(beginString, msgType, correspondingFieldID);
-        }
-        if("FIX.4.1".equals(beginString)) {
-            return fix41Factory.create(beginString, msgType, correspondingFieldID);
-        }
-        if("FIX.4.2".equals(beginString)) {
-            return fix42Factory.create(beginString, msgType, correspondingFieldID);
-        }
-        if("FIX.4.3".equals(beginString)) {
-            return fix43Factory.create(beginString, msgType, correspondingFieldID);
-        }
-        if("FIX.4.4".equals(beginString)) {
-	    return fix44Factory.create(beginString, msgType, correspondingFieldID);
-        }
-        if("FIXT.1.1".equals(beginString)) {
-	    return fix50Factory.create(beginString, msgType, correspondingFieldID);
+        MessageFactory messageFactory = messageFactories.get(beginString);
+        if (messageFactory != null) {
+            return messageFactory.create(beginString, msgType, correspondingFieldID);
         }
         throw new IllegalArgumentException("Unsupported FIX version: "+beginString);
     }

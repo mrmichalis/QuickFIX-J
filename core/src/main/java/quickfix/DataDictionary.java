@@ -543,7 +543,6 @@ public class DataDictionary {
     public void validate(Message message) throws IncorrectTagValue, FieldNotFound,
             IncorrectDataFormat {
         validate(message, false);
-
     }
 
     /**
@@ -561,25 +560,39 @@ public class DataDictionary {
      */
     public void validate(Message message, boolean bodyOnly) throws IncorrectTagValue,
             FieldNotFound, IncorrectDataFormat {
-        if (hasVersion && !getVersion().equals(message.getHeader().getString(BeginString.FIELD))) {
+        validate(message, bodyOnly ? null : this, this);
+    }
+
+    static void validate(Message message, DataDictionary sessionDataDictionary, DataDictionary applicationDataDictionary) throws IncorrectTagValue,
+            FieldNotFound, IncorrectDataFormat {
+        boolean bodyOnly = sessionDataDictionary == null;
+
+        if (isVersionSpecified(sessionDataDictionary)
+                && !sessionDataDictionary.getVersion().equals(
+                        message.getHeader().getString(BeginString.FIELD))) {
             throw new UnsupportedVersion();
         }
 
         if (!message.hasValidStructure() && message.getException() != null) {
             throw message.getException();
         }
-        
+
         String msgType = message.getHeader().getString(MsgType.FIELD);
-        if (hasVersion) {
-            checkMsgType(msgType);
-            checkHasRequired(message.getHeader(), message, message.getTrailer(), msgType, bodyOnly);
+        if (isVersionSpecified(applicationDataDictionary)) {
+            applicationDataDictionary.checkMsgType(msgType);
+            applicationDataDictionary.checkHasRequired(message.getHeader(), message, message.getTrailer(), msgType, bodyOnly);
         }
 
         if (!bodyOnly) {
-            iterate(message.getHeader(), msgType, this);
-            iterate(message.getTrailer(), msgType, this);
+            sessionDataDictionary.iterate(message.getHeader(), msgType, sessionDataDictionary);
+            sessionDataDictionary.iterate(message.getTrailer(), msgType, sessionDataDictionary);
         }
-        iterate(message, msgType, this);
+        
+        applicationDataDictionary.iterate(message, msgType, applicationDataDictionary);
+    }
+
+    private static boolean isVersionSpecified(DataDictionary dd) {
+        return dd != null && dd.hasVersion;
     }
 
     private void iterate(FieldMap map, String msgType, DataDictionary dd) throws IncorrectTagValue,

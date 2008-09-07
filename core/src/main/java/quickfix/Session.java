@@ -27,12 +27,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import quickfix.Message.Header;
 import quickfix.field.ApplVerID;
 import quickfix.field.BeginSeqNo;
 import quickfix.field.BeginString;
 import quickfix.field.BusinessRejectReason;
+import quickfix.field.CstmApplVerID;
 import quickfix.field.DefaultApplVerID;
 import quickfix.field.EncryptMethod;
 import quickfix.field.EndSeqNo;
@@ -247,7 +249,7 @@ public class Session {
     private long lastSessionTimeCheck = 0;
     private boolean lastSessionTimeResult = false;
 
-    private final DataDictionary dataDictionary;
+    private final DataDictionaryProvider dataDictionaryProvider;
     private final boolean checkLatency;
     private final int maxLatency;
     private final boolean resetOnLogon;
@@ -264,20 +266,22 @@ public class Session {
     private final SessionStateListener stateListener = (SessionStateListener) stateListeners
             .getMulticaster();
 
+    private final AtomicReference<ApplVerID> defaultApplVerID = new AtomicReference<ApplVerID>();
+    
     public static final int DEFAULT_MAX_LATENCY = 120;
     public static final double DEFAULT_TEST_REQUEST_DELAY_MULTIPLIER = 0.5;
 
     Session(Application application, MessageStoreFactory messageStoreFactory, SessionID sessionID,
-            DataDictionary dataDictionary, SessionSchedule sessionSchedule, LogFactory logFactory,
+            DataDictionaryProvider dataDictionaryProvider, SessionSchedule sessionSchedule, LogFactory logFactory,
             MessageFactory messageFactory, int heartbeatInterval) {
-        this(application, messageStoreFactory, sessionID, dataDictionary, sessionSchedule,
+        this(application, messageStoreFactory, sessionID, dataDictionaryProvider, sessionSchedule,
                 logFactory, messageFactory, heartbeatInterval, true, DEFAULT_MAX_LATENCY, true,
                 false, false, false, false, true, false, true, false,
                 DEFAULT_TEST_REQUEST_DELAY_MULTIPLIER);
     }
 
     Session(Application application, MessageStoreFactory messageStoreFactory, SessionID sessionID,
-            DataDictionary dataDictionary, SessionSchedule sessionSchedule, LogFactory logFactory,
+            DataDictionaryProvider dataDictionaryProvider, SessionSchedule sessionSchedule, LogFactory logFactory,
             MessageFactory messageFactory, int heartbeatInterval, boolean checkLatency,
             int maxLatency, boolean millisecondsInTimeStamp, boolean resetOnLogon,
             boolean resetOnLogout, boolean resetOnDisconnect, boolean refreshMessageStoreAtLogon,
@@ -293,7 +297,7 @@ public class Session {
         this.resetOnDisconnect = resetOnDisconnect;
         this.millisecondsInTimeStamp = millisecondsInTimeStamp;
         this.refreshMessageStoreAtLogon = refreshMessageStoreAtLogon;
-        this.dataDictionary = dataDictionary;
+        this.dataDictionaryProvider = dataDictionaryProvider;
         this.messageFactory = messageFactory;
         this.checkCompID = checkCompID;
         this.redundantResentRequestsAllowed = redundantResentRequestsAllowed;
@@ -704,20 +708,42 @@ public class Session {
             return;
         }
 
-        String msgType = message.getHeader().getString(MsgType.FIELD);
+        Header header = message.getHeader();
+        String msgType = header.getString(MsgType.FIELD);
 
         try {
 
-            String beginString = message.getHeader().getString(BeginString.FIELD);
+            String beginString = header.getString(BeginString.FIELD);
 
             if (!beginString.equals(sessionID.getBeginString())) {
                 throw new UnsupportedVersion();
             }
 
-            if (dataDictionary != null) {
-                dataDictionary.validate(message);
+            if (msgType.equals(MsgType.LOGON)) {
+                if (sessionID.isAppVersioned()) {
+                    defaultApplVerID.set(new ApplVerID(header.getString(DefaultApplVerID.FIELD)));
+
+                } else {
+                    defaultApplVerID.set(MessageUtils.toApplVerID(beginString));
+                }
             }
 
+            if (dataDictionaryProvider != null) {
+                DataDictionary sessionDataDictionary = dataDictionaryProvider
+                        .getSessionDataDictionary(beginString);
+    
+                String customApplVerID = header.isSetField(CstmApplVerID.FIELD) ? header
+                        .getString(CstmApplVerID.FIELD) : null;
+    
+                ApplVerID applVerID = header.isSetField(ApplVerID.FIELD) ? new ApplVerID(header
+                        .getString(ApplVerID.FIELD)) : defaultApplVerID.get();
+    
+                DataDictionary applicationDataDictionary = dataDictionaryProvider
+                        .getApplicationDataDictionary(applVerID, customApplVerID);
+                
+                DataDictionary.validate(message, sessionDataDictionary, applicationDataDictionary);
+            }
+            
             if (msgType.equals(MsgType.LOGON)) {
                 nextLogon(message);
             } else if (msgType.equals(MsgType.HEARTBEAT)) {
@@ -905,10 +931,7 @@ public class Session {
     }
 
     private Message parseMessage(String messageData) throws InvalidMessage {
-        String msgType = MessageUtils.getMessageType(messageData);
-        Message msg = messageFactory.create(sessionID.getBeginString(), msgType);
-        msg.fromString(messageData, dataDictionary, false);
-        return msg;
+        return MessageUtils.parse(this, messageData);
     }
 
     private boolean isTargetTooLow(int msgSeqNum) throws IOException {
@@ -1817,7 +1840,17 @@ public class Session {
     }
 
     public DataDictionary getDataDictionary() {
-        return dataDictionary;
+        if (!sessionID.isAppVersioned()) {
+            // For pre-FIXT sessions, the session data dictionary is the same as the application
+            // data dictionary.
+            return dataDictionaryProvider.getSessionDataDictionary(sessionID.getBeginString());
+        } else {
+            throw new SessionException("No default data dictionary for FIXT 1.1 and newer");
+        }
+    }
+    
+    public DataDictionaryProvider getDataDictionaryProvider() {
+        return dataDictionaryProvider;
     }
 
     public SessionID getSessionID() {
@@ -1941,7 +1974,7 @@ public class Session {
     }
 
     public boolean isUsingDataDictionary() {
-        return dataDictionary != null;
+        return dataDictionaryProvider != null;
     }
 
     public Date getStartTime() throws IOException {
@@ -1969,5 +2002,13 @@ public class Session {
 
     public void removeStateListener(SessionStateListener listener) {
         stateListeners.removeListener(listener);
+    }
+
+    /**
+     * Not intended for end users.
+     * @return the default application version ID
+     */
+    public ApplVerID getDefaultApplicationVersionID() {
+        return defaultApplVerID.get();
     }
 }

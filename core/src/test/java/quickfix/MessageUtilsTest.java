@@ -125,6 +125,6 @@ public class MessageUtilsTest extends TestCase {
 
     public void testParse() throws Exception {
         String messageString = "8=FIX.4.09=5635=A34=149=TW52=20060118-16:34:1956=ISLD98=0108=210=223";
-        MessageUtils.parse(new DefaultMessageFactory(), null, messageString);
+        MessageUtils.parse(new DefaultMessageFactory(), null, null, null, null, messageString);
     }
 }
