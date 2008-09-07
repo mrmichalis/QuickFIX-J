@@ -136,6 +136,30 @@ public class Session {
     public static final String SETTING_DATA_DICTIONARY = "DataDictionary";
 
     /**
+     * Session setting specifying the path to the transport data dictionary. 
+     * This setting supports the possibility of a custom transport data
+     * dictionary for each session. This setting would only be used with FIXT 1.1 and
+     * new transport protocols.
+     */
+    public static final String SETTING_TRANSPORT_DATA_DICTIONARY = "TransportDataDictionary";
+
+    /**
+     * Session setting specifying the path to the application data dictionary to use for
+     * this session. This setting supports the possibility of a custom application data
+     * dictionary for each session. This setting would only be used with FIXT 1.1 and
+     * new transport protocols. This setting can be used as a prefix to specify multiple
+     * application dictionaries for the FIXT transport. For example:
+     * <pre><code>
+     * DefaultApplVerID=FIX.4.2
+     * AppDataDictionary=FIX42.xml
+     * AppDataDictionary.FIX.4.4=FIX44.xml
+     * </code></pre>
+     * This would use FIX42.xml for the default application version ID and FIX44.xml for
+     * any FIX 4.4 messages.
+     */
+    public static final String SETTING_APP_DATA_DICTIONARY = "AppDataDictionary";
+
+    /**
      * Session validation setting for enabling whether field ordering is
      * validated. Values are "Y" or "N". Default is "Y".
      */
@@ -222,6 +246,8 @@ public class Session {
      */
     public static final String SETTING_ALLOW_UNKNOWN_MSG_FIELDS = "AllowUnknownMsgFields";
 
+    public static final String SETTING_DEFAULT_APPL_VER_ID = "DefaultApplVerID";
+
     // @GuardedBy(sessions)
     private static final Map<SessionID, Session> sessions = new HashMap<SessionID, Session>();
 
@@ -267,7 +293,7 @@ public class Session {
             .getMulticaster();
 
     private final AtomicReference<ApplVerID> defaultApplVerID = new AtomicReference<ApplVerID>();
-    
+
     public static final int DEFAULT_MAX_LATENCY = 120;
     public static final double DEFAULT_TEST_REQUEST_DELAY_MULTIPLIER = 0.5;
 
@@ -720,7 +746,7 @@ public class Session {
             }
 
             if (msgType.equals(MsgType.LOGON)) {
-                if (sessionID.isAppVersioned()) {
+                if (sessionID.isFIXT()) {
                     defaultApplVerID.set(new ApplVerID(header.getString(DefaultApplVerID.FIELD)));
 
                 } else {
@@ -730,7 +756,7 @@ public class Session {
 
             if (dataDictionaryProvider != null) {
                 DataDictionary sessionDataDictionary = dataDictionaryProvider
-                        .getSessionDataDictionary(beginString);
+                        .getTransportDataDictionary(beginString);
     
                 String customApplVerID = header.isSetField(CstmApplVerID.FIELD) ? header
                         .getString(CstmApplVerID.FIELD) : null;
@@ -1438,10 +1464,8 @@ public class Session {
         Message logon = messageFactory.create(sessionID.getBeginString(), MsgType.LOGON);
         logon.setInt(EncryptMethod.FIELD, 0);
         logon.setInt(HeartBtInt.FIELD, state.getHeartBeatInterval());
-        // TODO FIX50 Put the ApplVerID into the session
-        // This is not a generic mechanism for all FIX 5.+
-        if (sessionID.getBeginString().startsWith(FixVersions.FIXT_SESSION_PREFIX)) {
-            logon.setString(DefaultApplVerID.FIELD, ApplVerID.FIX50);
+        if (sessionID.isFIXT()) {
+            logon.setField(DefaultApplVerID.FIELD, getDefaultApplicationVersionID());
         }
         if (isStateRefreshNeeded(MsgType.LOGON)) {
             getLog().onEvent("Refreshing message/state store at logon");
@@ -1691,15 +1715,13 @@ public class Session {
 
     private void generateLogon(Message otherLogon) throws FieldNotFound {
         Message logon = messageFactory.create(sessionID.getBeginString(), MsgType.LOGON);
-        logon.setInt(EncryptMethod.FIELD, 0);
+        logon.setInt(EncryptMethod.FIELD, EncryptMethod.NONE_OTHER);
         if (state.isResetReceived()) {
             logon.setBoolean(ResetSeqNumFlag.FIELD, true);
         }
         logon.setInt(HeartBtInt.FIELD, otherLogon.getInt(HeartBtInt.FIELD));
-        // TODO FIX50 Put the ApplVerID into the session
-        // This is not a generic mechanism for all FIX 5.+, we need to
-        if (sessionID.getBeginString().startsWith(FixVersions.FIXT_SESSION_PREFIX)) {
-            logon.setString(DefaultApplVerID.FIELD, ApplVerID.FIX50);
+        if (sessionID.isFIXT()) {
+            logon.setField(getDefaultApplicationVersionID());
         }
         initializeHeader(logon.getHeader());
         sendRaw(logon, 0);
@@ -1840,10 +1862,10 @@ public class Session {
     }
 
     public DataDictionary getDataDictionary() {
-        if (!sessionID.isAppVersioned()) {
+        if (!sessionID.isFIXT()) {
             // For pre-FIXT sessions, the session data dictionary is the same as the application
             // data dictionary.
-            return dataDictionaryProvider.getSessionDataDictionary(sessionID.getBeginString());
+            return dataDictionaryProvider.getTransportDataDictionary(sessionID.getBeginString());
         } else {
             throw new SessionException("No default data dictionary for FIXT 1.1 and newer");
         }

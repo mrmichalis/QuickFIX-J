@@ -40,8 +40,6 @@ import org.slf4j.LoggerFactory;
 
 import quickfix.mina.CriticalProtocolCodecException;
 
-// TODO FIX50 Write unit tests for FIX5.0 parsing
-
 /**
  * Detects and decodes FIX message strings in an incoming data stream. The
  * message string is then passed to MINA IO handlers for further processing.

@@ -41,6 +41,7 @@ public class DefaultMessageFactory implements MessageFactory {
         discoverFactory(BEGINSTRING_FIX42, "quickfix.fix42.MessageFactory");
         discoverFactory(BEGINSTRING_FIX43, "quickfix.fix43.MessageFactory");
         discoverFactory(BEGINSTRING_FIX44, "quickfix.fix44.MessageFactory");
+        discoverFactory(BEGINSTRING_FIXT11, "quickfix.fixt11.MessageFactory");
         discoverFactory(FIX50, "quickfix.fix50.MessageFactory");
     }
 
@@ -57,8 +58,6 @@ public class DefaultMessageFactory implements MessageFactory {
         }
     }
     
-    // TODO FIX50 Do we need both the beginString and ApplVerID to create message?
-	
     public Message create(String beginString, String msgType) {
         MessageFactory messageFactory = messageFactories.get(beginString);
         if (messageFactory != null) {

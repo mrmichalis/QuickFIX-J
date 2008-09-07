@@ -25,7 +25,7 @@ import quickfix.field.*;
  * Helper class for delegating message types for various FIX versions to
  * type-safe onMessage methods.
  */
-public class MessageCracker extends quickfix.fix50.MessageCracker {
+public class MessageCracker extends quickfix.fixt11.MessageCracker {
 
     /**
      * Process ("crack") a FIX message and call the type-safe onMessage method for
@@ -33,31 +33,43 @@ public class MessageCracker extends quickfix.fix50.MessageCracker {
      */
     public void crack(quickfix.Message message, SessionID sessionID) throws UnsupportedMessageType,
             FieldNotFound, IncorrectTagValue {
+        crack(message, sessionID, message.getHeader().getString(BeginString.FIELD));
+    }
 
-        BeginString beginString = new BeginString();
-        message.getHeader().getField(beginString);
-        String value = beginString.getValue();
-
-        if (value.equals("FIX.4.0")) {
+    private void crack(quickfix.Message message, SessionID sessionID, String beginString)
+            throws UnsupportedMessageType, FieldNotFound, IncorrectTagValue {
+        if (beginString.equals("FIX.4.0")) {
             crack40((quickfix.fix40.Message) message, sessionID);
-        } else if (value.equals("FIX.4.1")) {
+        } else if (beginString.equals("FIX.4.1")) {
             crack41((quickfix.fix41.Message) message, sessionID);
-        } else if (value.equals("FIX.4.2")) {
+        } else if (beginString.equals("FIX.4.2")) {
             crack42((quickfix.fix42.Message) message, sessionID);
-        } else if (value.equals("FIX.4.3")) {
+        } else if (beginString.equals("FIX.4.3")) {
             crack43((quickfix.fix43.Message) message, sessionID);
-        } else if (value.equals("FIX.4.4")) {
+        } else if (beginString.equals("FIX.4.4")) {
             crack44((quickfix.fix44.Message) message, sessionID);
-        } else if (value.equals("FIXT.1.1")) {
-            if (ApplVerID.FIX50.equals(message.getHeader().getString(ApplVerID.FIELD))) {
-                crack50((quickfix.fix50.Message) message, sessionID);
+        } else if (beginString.equals("FIX.5.0")) {
+            crack50((quickfix.fix50.Message) message, sessionID);
+        } else if (beginString.equals("FIXT.1.1")) {
+            if (MessageUtils.isAdminMessage(message.getHeader().getString(MsgType.FIELD))) {
+                crack11((quickfix.fixt11.Message) message, sessionID);
             } else {
-                // TODO FIX50 Will this fail if ApplVerID is not FIX5.0?
-                onMessage(message, sessionID);
+                ApplVerID applVerID = message.getHeader().isSetField(ApplVerID.FIELD) ? new ApplVerID(message
+                        .getHeader().getString(ApplVerID.FIELD)) : null;
+                if (applVerID == null) {
+                    Session session = lookupSession(sessionID);
+                    applVerID = session.getDefaultApplicationVersionID();
+                }
+                crack(message, sessionID, MessageUtils.toBeginString(applVerID));
             }
         } else {
             onMessage(message, sessionID);
         }
+    }
+
+    // Test hook
+    Session lookupSession(SessionID sessionID) {
+        return Session.lookupSession(sessionID);
     }
 
 }

@@ -415,7 +415,7 @@ public class MessageCodeGenerator {
             boolean useDecimal = getOption(BIGDECIMAL_TYPE_OPTION, false);
 
             long start = System.currentTimeMillis();
-            final String[] vers = new String[] { "FIX 5.0", "FIX 4.4", "FIX 4.3", "FIX 4.2",
+            final String[] vers = new String[] { "FIXT 1.1", "FIX 5.0", "FIX 4.4", "FIX 4.3", "FIX 4.2",
                     "FIX 4.1", "FIX 4.0" };
             for (int i = 0; i < vers.length; ++i) {
                 Task task = new Task();

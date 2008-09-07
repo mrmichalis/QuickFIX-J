@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<fix major="5" minor="0">
+<fix type="FIXT" major="1" minor="1">
     <header>
         <field name="BeginString" required="Y"/>
         <field name="BodyLength" required="Y"/>
@@ -79,7 +79,6 @@
             <field name="DefaultApplVerID" required="Y"/>
             <component name="MsgTypeGrp" required="N"/>
         </message>
-        <message msgcat="admin" msgtype="n" name="XML_non_FIX"/>
     </messages>
     <components>
         <component name="HopGrp">
@@ -248,7 +247,12 @@
         <field name="DeliverToLocationID" number="145" type="STRING"/>
         <field name="XmlDataLen" number="212" type="LENGTH"/>
         <field name="XmlData" number="213" type="DATA"/>
-        <field name="MessageEncoding" number="347" type="STRING"/>
+	    <field number="347" name="MessageEncoding" type="STRING">
+	      <value enum="ISO-2022-JP" description="ISO_2022_JP"/>
+	      <value enum="EUC-JP" description="EUC_JP"/>
+	      <value enum="SHIFT_JIS" description="SHIFT_JIS"/>
+	      <value enum="UTF-8" description="UTF_8"/>
+	    </field>
         <field name="EncodedTextLen" number="354" type="LENGTH"/>
         <field name="EncodedText" number="355" type="DATA"/>
         <field name="LastMsgSeqNumProcessed" number="369" type="SEQNUM"/>

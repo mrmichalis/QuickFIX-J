@@ -31,6 +31,11 @@ public class DefaultMessageFactoryTest {
     }
     
     @Test
+    public void testFixtCreate() throws Exception {
+        assertEquals(quickfix.fixt11.Logon.class, factory.create(BEGINSTRING_FIXT11, MsgType.LOGON).getClass());
+    }
+    
+    @Test
     public void testGroupCreate() throws Exception {
         
         new ExpectedTestFailure(IllegalArgumentException.class, "unknown") {

@@ -21,12 +21,13 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
  <xsl:output  method="text" encoding="UTF-8"/>
  <xsl:param name="fieldPackage"/>
+ <xsl:param name="messagePackage"/>
  
  <xsl:template match="text()"/>
 
- <xsl:template match="/">/* -*- C++ -*- */
+ <xsl:template match="/">
  <xsl:copy-of select="document('COPYRIGHT.xml')"/>
-package quickfix.fix<xsl:value-of select="//fix/@major"/><xsl:value-of select="//fix/@minor"/>;
+package <xsl:value-of select="$messagePackage"/>;
 
 import quickfix.*;
 import <xsl:value-of select="$fieldPackage"/>.*;
@@ -88,6 +89,7 @@ public void onMessage( quickfix.Message message, SessionID sessionID ) throws Fi
  <xsl:if test="//fix/@major='5'">
    <xsl:if test="//fix/@minor='0'">extends quickfix.fix44.MessageCracker</xsl:if>
  </xsl:if>
+ <xsl:if test="//fix/@type='FIXT'">extends quickfix.fix50.MessageCracker</xsl:if>
 </xsl:template>
 
 </xsl:stylesheet>

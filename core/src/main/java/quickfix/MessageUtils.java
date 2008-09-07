@@ -88,31 +88,24 @@ public class MessageUtils {
         }
     }
 
-    // TODO FIX50 document this
-    // TODO FIX50 test this
+    /**
+     * This is for internal use and may be removed in the future.
+     * 
+     * @param session
+     * @param messageString
+     * @return the parsed message
+     * @throws InvalidMessage
+     */
     public static Message parse(Session session, String messageString) throws InvalidMessage {
         String beginString = getStringField(messageString, BeginString.FIELD);
-        ApplVerID applVerID;
+        String msgType = getMessageType(messageString);
+        
+        ApplVerID applVerID = null;
         String customApplVerID = null;
-        String msgType = null;
         if (FixVersions.BEGINSTRING_FIXT11.equals(beginString)) {
             String applVerIdString = getStringField(messageString, ApplVerID.FIELD);
-            if (applVerIdString != null) {
-                applVerID = new ApplVerID(applVerIdString);
-            } else {
-                msgType = getMessageType(messageString);
-                if (MsgType.LOGON.equals(msgType)) {
-                    applVerIdString = getStringField(messageString, DefaultApplVerID.FIELD);
-                    if (applVerIdString == null) {
-                        // TODO FIX50 Throw exception for invalid Logon message
-                    }
-                    applVerID = new ApplVerID(applVerIdString);
-                   
-                } else {
-                    applVerID = session.getDefaultApplicationVersionID();
-                }
-            }
-            // TODO FIX50 What should we do if don't an ApplVerID at this point
+            applVerID = applVerIdString != null ? new ApplVerID(applVerIdString) : session
+                    .getDefaultApplicationVersionID();
             customApplVerID = getStringField(messageString, CstmApplVerID.FIELD);
         } else {
             applVerID = toApplVerID(beginString);
@@ -120,36 +113,22 @@ public class MessageUtils {
         
         MessageFactory messageFactory = session.getMessageFactory();
         
-        DataDictionaryProvider dataDictionaryProvider = session.getDataDictionaryProvider();
-        DataDictionary sessionDataDictionary = dataDictionaryProvider.getSessionDataDictionary(beginString);
-        DataDictionary applicationDataDictionary = dataDictionaryProvider.getApplicationDataDictionary(applVerID, customApplVerID);
-        return MessageUtils.parse(messageFactory, sessionDataDictionary, 
-                applicationDataDictionary, beginString, msgType, messageString);
-    }
+        DataDictionaryProvider ddProvider = session.getDataDictionaryProvider();
+        DataDictionary sessionDataDictionary = ddProvider.getTransportDataDictionary(beginString);
+        DataDictionary applicationDataDictionary = ddProvider.getApplicationDataDictionary(
+                applVerID, customApplVerID);
 
-    public static Message parse(MessageFactory messageFactory,
-            DataDictionary sessionDataDictionary, DataDictionary applicationDataDictionary, 
-            String beginString, String msgType, String messageString) throws InvalidMessage {
-        if (beginString == null) {
-            beginString = getStringField(messageString, BeginString.FIELD);
-        }
-        if (msgType == null) {
-            msgType = getMessageType(messageString);
-        }
         quickfix.Message message = messageFactory.create(beginString, msgType);
-        DataDictionary payloadDictionary = isAdminMessage(msgType) ? sessionDataDictionary : applicationDataDictionary;
-        message.parse(messageString, sessionDataDictionary, payloadDictionary, 
+        DataDictionary payloadDictionary = MessageUtils.isAdminMessage(msgType)
+                ? sessionDataDictionary
+                : applicationDataDictionary;
+        message.parse(messageString, sessionDataDictionary, payloadDictionary,
                 payloadDictionary != null);
+        
         return message;
     }
 
-    // TODO FIX50 This is only used for tests now
-    public static Message parse(MessageFactory messageFactory, DataDictionary dataDictionary,
-            String messageString) throws InvalidMessage {
-        return parse(messageFactory, dataDictionary, dataDictionary, null, null, messageString);
-    }
-
-    private static boolean isAdminMessage(String msgType) {
+    static boolean isAdminMessage(String msgType) {
         return msgType.length() == 1 && "0A12345".indexOf(msgType) != -1;
     }
 

@@ -52,7 +52,7 @@ public class Message extends quickfix.Message
 	    <xsl:when test="//fix/@major='4'">
     getHeader().setField(new BeginString("FIX.<xsl:value-of select="//fix/@major"/>.<xsl:value-of select="//fix/@minor"/>"));
 	    </xsl:when>
-	    <xsl:when test="//fix/@major='5' and //fix/@minor='0'">
+	    <xsl:when test="//fix/@major='5' or //fix/@type='FIXT'">
     getHeader().setField(new BeginString("FIXT.1.1"));
 	    </xsl:when>
     </xsl:choose>

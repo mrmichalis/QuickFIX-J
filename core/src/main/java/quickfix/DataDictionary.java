@@ -833,7 +833,10 @@ public class DataDictionary {
             throw new ConfigError("minor attribute not found on <fix>");
         }
 
-        setVersion("FIX." + documentElement.getAttribute("major") + "."
+        String dictionaryType = documentElement.hasAttribute("type") ?
+                documentElement.getAttribute("type") : "FIX";
+                
+        setVersion(dictionaryType + "." + documentElement.getAttribute("major") + "."
                 + documentElement.getAttribute("minor"));
 
         // Index Components

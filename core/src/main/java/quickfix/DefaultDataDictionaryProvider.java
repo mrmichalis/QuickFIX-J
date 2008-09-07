@@ -30,7 +30,7 @@ import quickfix.field.ApplVerID;
 
 public class DefaultDataDictionaryProvider implements DataDictionaryProvider {
     private static final String CUSTOM_APPL_VERSION_DELIM = "_";
-    private Map<String, DataDictionary> sessionDictionaries = new ConcurrentHashMap<String, DataDictionary>();
+    private Map<String, DataDictionary> transportDictionaries = new ConcurrentHashMap<String, DataDictionary>();
     private Map<AppVersionKey, DataDictionary> applicationDictionaries = new ConcurrentHashMap<AppVersionKey, DataDictionary>();
     private final boolean findDataDictionaries;
 
@@ -42,13 +42,13 @@ public class DefaultDataDictionaryProvider implements DataDictionaryProvider {
         this.findDataDictionaries = findDataDictionaries;
     }
 
-    public synchronized DataDictionary getSessionDataDictionary(String beginString) {
-        DataDictionary dd = sessionDictionaries.get(beginString);
+    public synchronized DataDictionary getTransportDataDictionary(String beginString) {
+        DataDictionary dd = transportDictionaries.get(beginString);
         if (dd == null && findDataDictionaries) {
             String path = beginString.replace(".", "") + ".xml";
             try {
                 dd = new DataDictionary(path);
-                sessionDictionaries.put(beginString, dd);
+                transportDictionaries.put(beginString, dd);
             } catch (ConfigError e) {
                 throw new QFJException(e);
             }
@@ -74,8 +74,8 @@ public class DefaultDataDictionaryProvider implements DataDictionaryProvider {
         return dd;
     }
 
-    public void addSessionDictionary(String beginString, DataDictionary dd) {
-        sessionDictionaries.put(beginString, dd);
+    public void addTransportDictionary(String beginString, DataDictionary dd) {
+        transportDictionaries.put(beginString, dd);
     }
 
     public void addApplicationDictionary(ApplVerID applVerID, String customApplVerID,

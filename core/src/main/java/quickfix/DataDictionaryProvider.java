@@ -19,8 +19,6 @@
 
 package quickfix;
 
-import org.quickfixj.QFJException;
-
 import quickfix.field.ApplVerID;
 
 /**
@@ -29,14 +27,14 @@ import quickfix.field.ApplVerID;
 public interface DataDictionaryProvider {
 
     /**
-     * Retrieve the data dictionary for parsing a specific version of the session header/trailer.
+     * Retrieve the data dictionary for parsing a specific version of the transport header/trailer.
      * 
      * @param beginString FIX.4.0 through FIXT.1.1
      * @return the data dictionary for the specified session protocol version 
      * or null if no such dictionary is available.
      * @see FixVersions
      */
-    DataDictionary getSessionDataDictionary(String beginString);
+    DataDictionary getTransportDataDictionary(String beginString);
 
     /**
      * Retrieve the data dictionary for the specified application version.

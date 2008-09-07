@@ -19,9 +19,13 @@
 
 package quickfix;
 
+import static org.mockito.Mockito.*;
 import junit.framework.TestCase;
 import quickfix.field.ApplVerID;
 import quickfix.field.BeginString;
+import quickfix.field.DefaultApplVerID;
+import quickfix.field.EncryptMethod;
+import quickfix.field.HeartBtInt;
 import quickfix.field.SenderCompID;
 import quickfix.field.TargetCompID;
 import quickfix.fix50.Email;
@@ -32,15 +36,23 @@ public class MessageCrackerTest extends TestCase {
     // test coverage of the cracker.
 
     private boolean messageCracked;
+    private Session mockSession;
     
-    public void testFix50MessageCracking() throws Exception {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        mockSession = mock(Session.class);
+        stub(mockSession.getDefaultApplicationVersionID()).toReturn(new ApplVerID(ApplVerID.FIX50));
+    }
+
+    public void testFixT11AppMessageCracking() throws Exception {
         quickfix.fix50.Email message = new quickfix.fix50.Email();
         message.getHeader().setString(BeginString.FIELD, FixVersions.BEGINSTRING_FIXT11);
         message.getHeader().setString(SenderCompID.FIELD, "SENDER");
         message.getHeader().setString(TargetCompID.FIELD, "TARGET");
         message.getHeader().setString(ApplVerID.FIELD, ApplVerID.FIX50);
-
-        MessageCracker cracker = new MessageCracker() {
+        
+        MessageCracker cracker = new MessageCrackerForTest() {
             public void onMessage(Email email, SessionID sessionID) {
                 messageCracked = true;
             }
@@ -51,23 +63,65 @@ public class MessageCrackerTest extends TestCase {
         assertTrue(messageCracked);
     }
 
-    // TODO FIX50 This message cracker test should pass
+    public void testFixtMessageCrackingWithNonFix50ApplVerID() throws Exception {
+        quickfix.fix44.Email message = createFix44Email();
+        message.getHeader().setString(ApplVerID.FIELD, ApplVerID.FIX44);
+
+        MessageCracker cracker = new MessageCrackerForTest() {
+            public void onMessage(quickfix.fix44.Email email, SessionID sessionID) {
+                messageCracked = true;
+            }
+        };
+
+        cracker.crack(message, new SessionID(FixVersions.BEGINSTRING_FIXT11, "SENDER", "TARGER"));
+        
+        assertTrue(messageCracked);
+    }
+
+    public void testFixtMessageCrackingWithSessionDefaultApplVerID() throws Exception {
+        quickfix.fix44.Email message = createFix44Email();
+        stub(mockSession.getDefaultApplicationVersionID()).toReturn(new ApplVerID(ApplVerID.FIX44));
+        
+        MessageCracker cracker = new MessageCrackerForTest() {
+            public void onMessage(quickfix.fix44.Email email, SessionID sessionID) {
+                messageCracked = true;
+            }
+        };
+
+        cracker.crack(message, new SessionID(FixVersions.BEGINSTRING_FIXT11, "SENDER", "TARGER"));
+        
+        assertTrue(messageCracked);
+    }
+
+    public void testFixtAdminMessageCracking() throws Exception {
+        quickfix.fixt11.Logon logon = new quickfix.fixt11.Logon(new EncryptMethod(
+                EncryptMethod.NONE_OTHER), new HeartBtInt(30),
+                new DefaultApplVerID(ApplVerID.FIX42));
+        
+        MessageCracker cracker = new MessageCrackerForTest() {
+            public void onMessage(quickfix.fixt11.Logon logon, SessionID sessionID) {
+                messageCracked = true;
+            }
+        };
+
+        System.out.println(logon);
+        cracker.crack(logon, new SessionID(FixVersions.BEGINSTRING_FIXT11, "SENDER", "TARGER"));
+        
+        assertTrue(messageCracked);
+    }
+
+    private quickfix.fix44.Email createFix44Email() {
+        quickfix.fix44.Email message = new quickfix.fix44.Email();
+        message.getHeader().setString(BeginString.FIELD, FixVersions.BEGINSTRING_FIXT11);
+        message.getHeader().setString(SenderCompID.FIELD, "SENDER");
+        message.getHeader().setString(TargetCompID.FIELD, "TARGET");
+        return message;
+    }
     
-//    public void testFix50MessageCrackingWithNonFix50ApplVerID() throws Exception {
-//        quickfix.fix44.Email message = new quickfix.fix44.Email();
-//        message.getHeader().setString(BeginString.FIELD, FixVersions.BEGINSTRING_FIXT11);
-//        message.getHeader().setString(SenderCompID.FIELD, "SENDER");
-//        message.getHeader().setString(TargetCompID.FIELD, "TARGET");
-//        message.getHeader().setString(ApplVerID.FIELD, ApplVerID.FIX44);
-//
-//        MessageCracker cracker = new MessageCracker() {
-//            public void onMessage(quickfix.fix44.Email email, SessionID sessionID) {
-//                messageCracked = true;
-//            }
-//        };
-//
-//        cracker.crack(message, new SessionID(FixVersions.BEGINSTRING_FIXT11, "SENDER", "TARGER"));
-//        
-//        assertTrue(messageCracked);
-//    }
+    private class MessageCrackerForTest extends MessageCracker {
+        @Override
+        Session lookupSession(SessionID sessionID) {
+            return mockSession;
+        }
+    }
 }

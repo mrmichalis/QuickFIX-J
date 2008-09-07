@@ -23,6 +23,7 @@ import static quickfix.SessionSettings.*;
 
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Properties;
 
 import quickfix.field.ApplVerID;
 
@@ -31,7 +32,7 @@ import quickfix.field.ApplVerID;
  * initiators) for creating sessions.
  */
 public class DefaultSessionFactory implements SessionFactory {
-    private static final Map<String,DataDictionary> dictionaryCache = new Hashtable<String,DataDictionary>(); // synchronized
+    private static final Map<String,DataDictionary> dictionaryCache = new Hashtable<String,DataDictionary>();
     private final Application application;
     private final MessageStoreFactory messageStoreFactory;
     private final LogFactory logFactory;
@@ -56,7 +57,7 @@ public class DefaultSessionFactory implements SessionFactory {
     public Session create(SessionID sessionID, SessionSettings settings) throws ConfigError {
         try {
             String connectionType = null;
-
+            
             if (settings.isSetting(sessionID, SessionFactory.SETTING_CONNECTION_TYPE)) {
                 connectionType = settings.getString(sessionID,
                         SessionFactory.SETTING_CONNECTION_TYPE);
@@ -76,65 +77,27 @@ public class DefaultSessionFactory implements SessionFactory {
                 throw new ConfigError("SessionQualifier cannot be used with acceptor.");
             }
 
+            if (sessionID.isFIXT()) {
+                if (!settings.isSetting(sessionID, Session.SETTING_DEFAULT_APPL_VER_ID)) {
+                    throw new ConfigError(Session.SETTING_DEFAULT_APPL_VER_ID
+                            + " is required for FIXT transport");
+                }
+            }
+                
             boolean useDataDictionary = true;
             if (settings.isSetting(sessionID, Session.SETTING_USE_DATA_DICTIONARY)) {
                 useDataDictionary = settings
                         .getBool(sessionID, Session.SETTING_USE_DATA_DICTIONARY);
             }
 
-            DefaultDataDictionaryProvider dataDictionaryProvider = null;
+            DefaultDataDictionaryProvider dataDictionaryProvider = new DefaultDataDictionaryProvider();
             
             if (useDataDictionary) {
-                String path;
-                if (settings.isSetting(sessionID, Session.SETTING_DATA_DICTIONARY)) {
-                    path = settings.getString(sessionID, Session.SETTING_DATA_DICTIONARY);
+                if (sessionID.isFIXT()) {
+                    processFixtDataDictionaries(sessionID, settings, dataDictionaryProvider);
                 } else {
-                    String beginString = settings.getString(sessionID, BEGINSTRING);
-                    if (!beginString.startsWith(FixVersions.FIXT_SESSION_PREFIX)) {
-                        path = beginString.replaceAll("\\.", "") + ".xml";
-                    } else {
-                        // TODO FIX50 The data dictionary lookup needs review
-                        // TODO FIX50 Write tests for data dictionary lookup
-                        String applVerID = ApplVerID.FIX50;
-                        try {
-                            applVerID = settings.getString(APPL_VER_ID);
-                        } catch (ConfigError e) {
-                            // Ignore it we just default to FIX 5.0
-                        }
-                        if (ApplVerID.FIX50.equals(applVerID)) {
-                            path = "FIX50.xml";
-                        } else {
-                            path = "FIX50.xml";
-                        }
-                    }
+                    processPreFixtDataDictionary(sessionID, settings, dataDictionaryProvider);
                 }
-                
-                DataDictionary dataDictionary = getDataDictionary(path);
-
-                if (settings.isSetting(sessionID, Session.SETTING_VALIDATE_FIELDS_OUT_OF_ORDER)) {
-                    dataDictionary.setCheckFieldsOutOfOrder(settings.getBool(sessionID,
-                            Session.SETTING_VALIDATE_FIELDS_OUT_OF_ORDER));
-                }
-
-                if (settings.isSetting(sessionID, Session.SETTING_VALIDATE_FIELDS_HAVE_VALUES)) {
-                    dataDictionary.setCheckFieldsHaveValues(settings.getBool(sessionID,
-                            Session.SETTING_VALIDATE_FIELDS_HAVE_VALUES));
-                }
-
-                if (settings.isSetting(sessionID, Session.SETTING_VALIDATE_USER_DEFINED_FIELDS)) {
-                    dataDictionary.setCheckUserDefinedFields(settings.getBool(sessionID,
-                            Session.SETTING_VALIDATE_USER_DEFINED_FIELDS));
-                }
-                
-                if (settings.isSetting(sessionID, Session.SETTING_ALLOW_UNKNOWN_MSG_FIELDS)) {
-                    dataDictionary.setAllowUnknownMessageFields(settings.getBool(sessionID,
-                            Session.SETTING_ALLOW_UNKNOWN_MSG_FIELDS));
-                }
-
-                dataDictionaryProvider = new DefaultDataDictionaryProvider();
-                dataDictionaryProvider.addSessionDictionary(sessionID.getBeginString(), dataDictionary);
-                dataDictionaryProvider.addApplicationDictionary(MessageUtils.toApplVerID(sessionID
-                        .getBeginString()), null, dataDictionary);
             }
 
             
@@ -206,6 +169,106 @@ public class DefaultSessionFactory implements SessionFactory {
         } catch (FieldConvertError e) {
             throw new ConfigError(e.getMessage());
         }
+    }
+
+    private void processPreFixtDataDictionary(SessionID sessionID, SessionSettings settings,
+            DefaultDataDictionaryProvider dataDictionaryProvider) throws ConfigError,
+            FieldConvertError {
+        DataDictionary dataDictionary = createDataDictionary(sessionID, settings,
+                Session.SETTING_DATA_DICTIONARY, sessionID.getBeginString());
+        dataDictionaryProvider.addTransportDictionary(sessionID.getBeginString(), dataDictionary);
+        dataDictionaryProvider.addApplicationDictionary(MessageUtils.toApplVerID(sessionID
+                .getBeginString()), null, dataDictionary);
+    }
+
+    private DataDictionary createDataDictionary(SessionID sessionID, SessionSettings settings,
+            String settingsKey, String beginString) throws ConfigError, FieldConvertError {
+        String path = getDictionaryPath(sessionID, settings, settingsKey, beginString);
+        DataDictionary dataDictionary = getDataDictionary(path);
+
+        if (settings.isSetting(sessionID, Session.SETTING_VALIDATE_FIELDS_OUT_OF_ORDER)) {
+            dataDictionary.setCheckFieldsOutOfOrder(settings.getBool(sessionID,
+                    Session.SETTING_VALIDATE_FIELDS_OUT_OF_ORDER));
+        }
+
+        if (settings.isSetting(sessionID, Session.SETTING_VALIDATE_FIELDS_HAVE_VALUES)) {
+            dataDictionary.setCheckFieldsHaveValues(settings.getBool(sessionID,
+                    Session.SETTING_VALIDATE_FIELDS_HAVE_VALUES));
+        }
+
+        if (settings.isSetting(sessionID, Session.SETTING_VALIDATE_USER_DEFINED_FIELDS)) {
+            dataDictionary.setCheckUserDefinedFields(settings.getBool(sessionID,
+                    Session.SETTING_VALIDATE_USER_DEFINED_FIELDS));
+        }
+
+        if (settings.isSetting(sessionID, Session.SETTING_ALLOW_UNKNOWN_MSG_FIELDS)) {
+            dataDictionary.setAllowUnknownMessageFields(settings.getBool(sessionID,
+                    Session.SETTING_ALLOW_UNKNOWN_MSG_FIELDS));
+        }
+
+        return dataDictionary;
+    }
+
+    private void processFixtDataDictionaries(SessionID sessionID, SessionSettings settings,
+            DefaultDataDictionaryProvider dataDictionaryProvider) throws ConfigError,
+            FieldConvertError {
+        dataDictionaryProvider.addTransportDictionary(sessionID.getBeginString(),
+                createDataDictionary(sessionID, settings, Session.SETTING_TRANSPORT_DATA_DICTIONARY,
+                        sessionID.getBeginString()));
+
+        Properties sessionProperties = settings.getSessionProperties(sessionID);
+        for (String key : sessionProperties.stringPropertyNames()) {
+            if (key.startsWith(Session.SETTING_APP_DATA_DICTIONARY)) {
+                if (key.equals(Session.SETTING_APP_DATA_DICTIONARY)) {
+                    ApplVerID applVerID = toApplVerID(settings
+                            .getString(sessionID, Session.SETTING_DEFAULT_APPL_VER_ID));
+                    DataDictionary dd = createDataDictionary(sessionID, settings,
+                            Session.SETTING_APP_DATA_DICTIONARY, sessionID.getBeginString());
+                    dataDictionaryProvider.addApplicationDictionary(applVerID, null, dd);
+                } else {
+                    // Process qualified app data dictionary properties
+                    int offset = key.indexOf('.');
+                    if (offset == -1) {
+                        throw new ConfigError("Malformed " + Session.SETTING_APP_DATA_DICTIONARY
+                                + ": " + key);
+                    }
+
+                    String beginStringQualifier = key.substring(offset + 1);
+                    DataDictionary dd = createDataDictionary(sessionID, settings, key, beginStringQualifier);
+                    dataDictionaryProvider.addApplicationDictionary(MessageUtils
+                            .toApplVerID(beginStringQualifier), null, dd);
+
+                }
+            }
+        }
+    }
+
+    private ApplVerID toApplVerID(String value) {
+        if (isApplVerIdEnum(value)) {
+            return new ApplVerID(value);
+        } else {
+            // value should be a beginString
+            return MessageUtils.toApplVerID(value);
+        }
+    }
+
+    private boolean isApplVerIdEnum(String value) {
+        return value.matches("[0-9]+");
+    }
+
+    private String getDictionaryPath(SessionID sessionID, SessionSettings settings,
+            String settingsKey, String beginString) throws ConfigError, FieldConvertError {
+        String path;
+        if (settings.isSetting(sessionID, settingsKey)) {
+            path = settings.getString(sessionID, settingsKey);
+        } else {
+            path = toDictionaryPath(beginString);
+        }
+        return path;
+    }
+
+    private String toDictionaryPath(String beginString) {
+        return beginString.replaceAll("\\.", "") + ".xml";
     }
 
     private DataDictionary getDataDictionary(String path) throws ConfigError {
