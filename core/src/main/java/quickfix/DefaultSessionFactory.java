@@ -21,6 +21,7 @@ package quickfix;
 
 import static quickfix.SessionSettings.*;
 
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
@@ -217,11 +218,13 @@ public class DefaultSessionFactory implements SessionFactory {
                         sessionID.getBeginString()));
 
         Properties sessionProperties = settings.getSessionProperties(sessionID);
-        for (String key : sessionProperties.stringPropertyNames()) {
+        Enumeration<?> keys = sessionProperties.propertyNames();
+        while (keys.hasMoreElements()) {
+            String key = (String) keys.nextElement();
             if (key.startsWith(Session.SETTING_APP_DATA_DICTIONARY)) {
                 if (key.equals(Session.SETTING_APP_DATA_DICTIONARY)) {
-                    ApplVerID applVerID = toApplVerID(settings
-                            .getString(sessionID, Session.SETTING_DEFAULT_APPL_VER_ID));
+                    ApplVerID applVerID = toApplVerID(settings.getString(sessionID,
+                            Session.SETTING_DEFAULT_APPL_VER_ID));
                     DataDictionary dd = createDataDictionary(sessionID, settings,
                             Session.SETTING_APP_DATA_DICTIONARY, sessionID.getBeginString());
                     dataDictionaryProvider.addApplicationDictionary(applVerID, null, dd);
@@ -234,7 +237,8 @@ public class DefaultSessionFactory implements SessionFactory {
                     }
 
                     String beginStringQualifier = key.substring(offset + 1);
-                    DataDictionary dd = createDataDictionary(sessionID, settings, key, beginStringQualifier);
+                    DataDictionary dd = createDataDictionary(sessionID, settings, key,
+                            beginStringQualifier);
                     dataDictionaryProvider.addApplicationDictionary(MessageUtils
                             .toApplVerID(beginStringQualifier), null, dd);
 
