@@ -36,7 +36,7 @@ public class DefaultDataDictionaryProviderTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        dictionaryForTest1 = new DataDictionary("FIX44_custom_test.xml");
+        dictionaryForTest1 = new DataDictionary("FIX44_Custom_Test.xml");
         dictionaryForTest2 = new DataDictionary(dictionaryForTest1);
     }
     
