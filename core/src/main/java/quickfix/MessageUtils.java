@@ -213,7 +213,7 @@ public class MessageUtils {
 
     /**
      * Convert a begin string to an ApplVerID
-     * @param begin string
+     * @param beginString
      * @return the ApplVerID for the specified begin string.
      * @throws QFJException if conversion fails.
      * @see FixVersions
