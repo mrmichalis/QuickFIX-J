@@ -19,6 +19,7 @@
 
 package quickfix;
 
+import static quickfix.FixVersions.*;
 import quickfix.field.*;
 
 /**
@@ -38,17 +39,17 @@ public class MessageCracker extends quickfix.fixt11.MessageCracker {
 
     private void crack(quickfix.Message message, SessionID sessionID, String beginString)
             throws UnsupportedMessageType, FieldNotFound, IncorrectTagValue {
-        if (beginString.equals("FIX.4.0")) {
+        if (beginString.equals(BEGINSTRING_FIX40)) {
             crack40((quickfix.fix40.Message) message, sessionID);
-        } else if (beginString.equals("FIX.4.1")) {
+        } else if (beginString.equals(BEGINSTRING_FIX41)) {
             crack41((quickfix.fix41.Message) message, sessionID);
-        } else if (beginString.equals("FIX.4.2")) {
+        } else if (beginString.equals(BEGINSTRING_FIX42)) {
             crack42((quickfix.fix42.Message) message, sessionID);
-        } else if (beginString.equals("FIX.4.3")) {
+        } else if (beginString.equals(BEGINSTRING_FIX43)) {
             crack43((quickfix.fix43.Message) message, sessionID);
-        } else if (beginString.equals("FIX.4.4")) {
+        } else if (beginString.equals(BEGINSTRING_FIX44)) {
             crack44((quickfix.fix44.Message) message, sessionID);
-        } else if (beginString.equals("FIX.5.0")) {
+        } else if (beginString.equals(FIX50)) {
             crack50((quickfix.fix50.Message) message, sessionID);
         } else if (beginString.equals("FIXT.1.1")) {
             if (MessageUtils.isAdminMessage(message.getHeader().getString(MsgType.FIELD))) {
@@ -58,7 +59,7 @@ public class MessageCracker extends quickfix.fixt11.MessageCracker {
                         .getHeader().getString(ApplVerID.FIELD)) : null;
                 if (applVerID == null) {
                     Session session = lookupSession(sessionID);
-                    applVerID = session.getDefaultApplicationVersionID();
+                    applVerID = session.getTargetDefaultApplicationVersionID();
                 }
                 crack(message, sessionID, MessageUtils.toBeginString(applVerID));
             }

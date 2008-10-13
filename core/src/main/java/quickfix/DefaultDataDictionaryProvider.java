@@ -42,7 +42,7 @@ public class DefaultDataDictionaryProvider implements DataDictionaryProvider {
         this.findDataDictionaries = findDataDictionaries;
     }
 
-    public synchronized DataDictionary getTransportDataDictionary(String beginString) {
+    public synchronized DataDictionary getSessionDataDictionary(String beginString) {
         DataDictionary dd = transportDictionaries.get(beginString);
         if (dd == null && findDataDictionaries) {
             String path = beginString.replace(".", "") + ".xml";

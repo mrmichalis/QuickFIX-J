@@ -42,7 +42,7 @@ public class MessageCrackerTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mockSession = mock(Session.class);
-        stub(mockSession.getDefaultApplicationVersionID()).toReturn(new ApplVerID(ApplVerID.FIX50));
+        stub(mockSession.getTargetDefaultApplicationVersionID()).toReturn(new ApplVerID(ApplVerID.FIX50));
     }
 
     public void testFixT11AppMessageCracking() throws Exception {
@@ -80,7 +80,7 @@ public class MessageCrackerTest extends TestCase {
 
     public void testFixtMessageCrackingWithSessionDefaultApplVerID() throws Exception {
         quickfix.fix44.Email message = createFix44Email();
-        stub(mockSession.getDefaultApplicationVersionID()).toReturn(new ApplVerID(ApplVerID.FIX44));
+        stub(mockSession.getTargetDefaultApplicationVersionID()).toReturn(new ApplVerID(ApplVerID.FIX44));
         
         MessageCracker cracker = new MessageCrackerForTest() {
             public void onMessage(quickfix.fix44.Email email, SessionID sessionID) {

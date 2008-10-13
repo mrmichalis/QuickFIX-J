@@ -60,6 +60,17 @@ public class DefaultMessageFactory implements MessageFactory {
     
     public Message create(String beginString, String msgType) {
         MessageFactory messageFactory = messageFactories.get(beginString);
+        if (beginString.equals(BEGINSTRING_FIXT11)) {
+            // The default message factory assumes that only FIX 5.0 will be
+            // used with FIXT 1.1 sessions. A more flexible approach will require
+            // an extension to the QF JNI API. Until then, you will need a custom
+            // message factory if you want to use application messages prior to
+            // FIX 5.0 with a FIXT 1.1 session.
+            if (!MessageUtils.isAdminMessage(msgType)) {
+                messageFactory = messageFactories.get(FIX50);
+            }
+        }
+        
         if (messageFactory != null) {
             return messageFactory.create(beginString, msgType);
         }

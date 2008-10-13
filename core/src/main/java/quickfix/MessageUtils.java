@@ -102,10 +102,9 @@ public class MessageUtils {
         
         ApplVerID applVerID = null;
         String customApplVerID = null;
+
         if (FixVersions.BEGINSTRING_FIXT11.equals(beginString)) {
-            String applVerIdString = getStringField(messageString, ApplVerID.FIELD);
-            applVerID = applVerIdString != null ? new ApplVerID(applVerIdString) : session
-                    .getDefaultApplicationVersionID();
+            applVerID = getApplVerID(session, messageString);
             customApplVerID = getStringField(messageString, CstmApplVerID.FIELD);
         } else {
             applVerID = toApplVerID(beginString);
@@ -114,7 +113,7 @@ public class MessageUtils {
         MessageFactory messageFactory = session.getMessageFactory();
         
         DataDictionaryProvider ddProvider = session.getDataDictionaryProvider();
-        DataDictionary sessionDataDictionary = ddProvider.getTransportDataDictionary(beginString);
+        DataDictionary sessionDataDictionary = ddProvider.getSessionDataDictionary(beginString);
         DataDictionary applicationDataDictionary = ddProvider.getApplicationDataDictionary(
                 applVerID, customApplVerID);
 
@@ -122,10 +121,38 @@ public class MessageUtils {
         DataDictionary payloadDictionary = MessageUtils.isAdminMessage(msgType)
                 ? sessionDataDictionary
                 : applicationDataDictionary;
+        
         message.parse(messageString, sessionDataDictionary, payloadDictionary,
                 payloadDictionary != null);
         
         return message;
+    }
+
+    private static ApplVerID getApplVerID(Session session, String messageString)
+            throws InvalidMessage {
+        ApplVerID applVerID = null;
+        
+        String applVerIdString = getStringField(messageString, ApplVerID.FIELD);
+        if (applVerIdString != null) {
+            applVerID = new ApplVerID(applVerIdString);
+        }
+        
+        if (applVerID == null) {
+            applVerID = session.getTargetDefaultApplicationVersionID();
+        }
+        
+        if (applVerID == null && isLogon(messageString)) {
+            String defaultApplVerIdString = getStringField(messageString, DefaultApplVerID.FIELD);
+            if (defaultApplVerIdString != null) {
+                applVerID = new ApplVerID(defaultApplVerIdString);
+            }
+        }
+
+        if (applVerID == null) {
+            throw new InvalidMessage("Can't determine ApplVerID for message");
+        }
+        
+        return applVerID;
     }
 
     static boolean isAdminMessage(String msgType) {
@@ -133,8 +160,16 @@ public class MessageUtils {
     }
 
     public static boolean isHeartbeat(String message) {
+        return isMessageType(message, MsgType.HEARTBEAT);
+    }
+
+    public static boolean isLogon(String message) {
+        return isMessageType(message, MsgType.LOGON);
+    }
+
+    private static boolean isMessageType(String message, String msgType) {
         try {
-            return MsgType.HEARTBEAT.equals(getMessageType(message));
+            return msgType.equals(getMessageType(message));
         } catch (InvalidMessage e) {
             return false;
         }

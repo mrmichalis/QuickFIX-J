@@ -63,7 +63,7 @@ public class DefaultSessionFactoryTest {
         Session session = factory.create(sessionID, settings);
 
         DataDictionaryProvider provider = session.getDataDictionaryProvider();
-        assertThat(provider.getTransportDataDictionary(sessionID.getBeginString()),
+        assertThat(provider.getSessionDataDictionary(sessionID.getBeginString()),
                 is(notNullValue()));
 
         assertThat(provider.getApplicationDataDictionary(new ApplVerID(ApplVerID.FIX42), null),
@@ -79,7 +79,7 @@ public class DefaultSessionFactoryTest {
         Session session = factory.create(sessionID, settings);
 
         DataDictionaryProvider provider = session.getDataDictionaryProvider();
-        assertThat(provider.getTransportDataDictionary(sessionID.getBeginString()),
+        assertThat(provider.getSessionDataDictionary(sessionID.getBeginString()),
                 is(notNullValue()));
         assertThat(provider.getApplicationDataDictionary(new ApplVerID(ApplVerID.FIX42), null),
                 is(notNullValue()));

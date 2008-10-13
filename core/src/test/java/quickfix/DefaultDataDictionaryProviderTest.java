@@ -46,7 +46,7 @@ public class DefaultDataDictionaryProviderTest {
         provider.addTransportDictionary(FixVersions.BEGINSTRING_FIX42, dictionaryForTest1);
         provider.addTransportDictionary(FixVersions.BEGINSTRING_FIX44, dictionaryForTest2);
         
-        DataDictionary dd = provider.getTransportDataDictionary(FixVersions.BEGINSTRING_FIX44);
+        DataDictionary dd = provider.getSessionDataDictionary(FixVersions.BEGINSTRING_FIX44);
         
         assertThat(dd, is(dictionaryForTest2));
     }
@@ -56,7 +56,7 @@ public class DefaultDataDictionaryProviderTest {
         DefaultDataDictionaryProvider provider = new DefaultDataDictionaryProvider(false);
         provider.addTransportDictionary(FixVersions.BEGINSTRING_FIX42, dictionaryForTest1);
         
-        DataDictionary dd = provider.getTransportDataDictionary(FixVersions.BEGINSTRING_FIX44);
+        DataDictionary dd = provider.getSessionDataDictionary(FixVersions.BEGINSTRING_FIX44);
         
         assertThat(dd, is(nullValue()));
     }
@@ -65,7 +65,7 @@ public class DefaultDataDictionaryProviderTest {
     public void returnSessionDictionaryWithDiscovery() throws Exception {
         DefaultDataDictionaryProvider provider = new DefaultDataDictionaryProvider();
         
-        DataDictionary dd = provider.getTransportDataDictionary(FixVersions.BEGINSTRING_FIX40);
+        DataDictionary dd = provider.getSessionDataDictionary(FixVersions.BEGINSTRING_FIX40);
         
         assertThat(dd, is(notNullValue()));
         assertThat(dd.getVersion(), is(FixVersions.BEGINSTRING_FIX40));
@@ -76,7 +76,7 @@ public class DefaultDataDictionaryProviderTest {
         DefaultDataDictionaryProvider provider = new DefaultDataDictionaryProvider();
         
         try {
-            provider.getTransportDataDictionary("FIX44_Invalid_Test");
+            provider.getSessionDataDictionary("FIX44_Invalid_Test");
         } catch (QFJException e) {
             assertThat(e.getCause(), is(ConfigError.class));
         }

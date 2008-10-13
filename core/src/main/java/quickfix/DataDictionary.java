@@ -60,6 +60,8 @@ import quickfix.field.converter.UtcTimestampConverter;
  * 
  */
 public class DataDictionary {
+    private static final String FIXT_PREFIX = "FIXT";
+    private static final String FIX_PREFIX = "FIX";
     public static final String ANY_VALUE = "__ANY__";
     public static final String HEADER_ID = "HEADER";
     public static final String TRAILER_ID = "TRAILER";
@@ -83,7 +85,7 @@ public class DataDictionary {
     private Map<IntStringPair, String> valueNames = new HashMap<IntStringPair, String>();
     private Map<IntStringPair, GroupInfo> groups = new HashMap<IntStringPair, GroupInfo>();
     private Map<String, Node> components = new HashMap<String, Node>();
-
+    
     private DataDictionary() {
     }
 
@@ -486,7 +488,7 @@ public class DataDictionary {
         checkFieldsOutOfOrder = rhs.checkFieldsOutOfOrder;
         checkFieldsHaveValues = rhs.checkFieldsHaveValues;
         checkUserDefinedFields = rhs.checkUserDefinedFields;
-
+        
         copyMap(messageFields, rhs.messageFields);
         copyMap(requiredFields, rhs.requiredFields);
         copyCollection(messages, rhs.messages);
@@ -834,8 +836,8 @@ public class DataDictionary {
         }
 
         String dictionaryType = documentElement.hasAttribute("type") ?
-                documentElement.getAttribute("type") : "FIX";
-                
+                documentElement.getAttribute("type") : FIX_PREFIX;
+        
         setVersion(dictionaryType + "." + documentElement.getAttribute("major") + "."
                 + documentElement.getAttribute("minor"));
 
@@ -917,22 +919,24 @@ public class DataDictionary {
             }
         }
 
-        // HEADER
-        NodeList headerNode = documentElement.getElementsByTagName("header");
-        if (headerNode.getLength() == 0) {
-            throw new ConfigError("<header> section not found in data dictionary");
-        }
+        if (beginString.startsWith(FIXT_PREFIX) || beginString.compareTo(FixVersions.FIX50) < 0) {
+            // HEADER
+            NodeList headerNode = documentElement.getElementsByTagName("header");
+            if (headerNode.getLength() == 0) {
+                throw new ConfigError("<header> section not found in data dictionary");
+            }
 
-        load(document, HEADER_ID, headerNode.item(0));
-        
-        // TRAILER
-        NodeList trailerNode = documentElement.getElementsByTagName("trailer");
-        if (trailerNode.getLength() == 0) {
-            throw new ConfigError("<trailer> section not found in data dictionary");
+            load(document, HEADER_ID, headerNode.item(0));
+
+            // TRAILER
+            NodeList trailerNode = documentElement.getElementsByTagName("trailer");
+            if (trailerNode.getLength() == 0) {
+                throw new ConfigError("<trailer> section not found in data dictionary");
+            }
+
+            load(document, TRAILER_ID, trailerNode.item(0));
         }
         
-        load(document, TRAILER_ID, trailerNode.item(0));
-
         // MSGTYPE
         NodeList messagesNode = documentElement.getElementsByTagName("messages");
         if (messagesNode.getLength() == 0) {

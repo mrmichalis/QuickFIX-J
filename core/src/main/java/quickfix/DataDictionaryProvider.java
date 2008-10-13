@@ -34,7 +34,7 @@ public interface DataDictionaryProvider {
      * or null if no such dictionary is available.
      * @see FixVersions
      */
-    DataDictionary getTransportDataDictionary(String beginString);
+    DataDictionary getSessionDataDictionary(String beginString);
 
     /**
      * Retrieve the data dictionary for the specified application version.

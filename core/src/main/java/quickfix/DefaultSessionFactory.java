@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import quickfix.field.ApplVerID;
+import quickfix.field.DefaultApplVerID;
 
 /**
  * Factory for creating sessions. Used by the communications code (acceptors,
@@ -78,11 +79,17 @@ public class DefaultSessionFactory implements SessionFactory {
                 throw new ConfigError("SessionQualifier cannot be used with acceptor.");
             }
 
+            DefaultApplVerID senderDefaultApplVerID = null;
+            
             if (sessionID.isFIXT()) {
                 if (!settings.isSetting(sessionID, Session.SETTING_DEFAULT_APPL_VER_ID)) {
                     throw new ConfigError(Session.SETTING_DEFAULT_APPL_VER_ID
                             + " is required for FIXT transport");
                 }
+                senderDefaultApplVerID = new DefaultApplVerID(toApplVerID(
+                        settings.getString(sessionID, Session.SETTING_DEFAULT_APPL_VER_ID))
+                        .getValue());
+                
             }
                 
             boolean useDataDictionary = true;
@@ -153,7 +160,7 @@ public class DefaultSessionFactory implements SessionFactory {
                     messageFactory, heartbeatInterval, checkLatency, maxLatency, millisInTimestamp,
                     resetOnLogon, resetOnLogout, resetOnDisconnect, refreshAtLogon,
                     checkCompID, redundantResentRequestAllowed, persistMessages,
-                    useClosedIntervalForResend, testRequestDelayMultiplier);
+                    useClosedIntervalForResend, testRequestDelayMultiplier, senderDefaultApplVerID);
 
             session.setLogonTimeout(logonTimeout);
             session.setLogoutTimeout(logoutTimeout);
