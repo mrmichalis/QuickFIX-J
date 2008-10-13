@@ -406,7 +406,7 @@
 	<path id="test.classpath">
 		<pathelement location="${jar.output.dir}/${quickfixj.core.jar}" />
 		<fileset dir="${jar.output.dir}">
-			<include name="quickfixj-msg-fix4*-${version}.jar"/>
+			<include name="quickfixj-msg-fix*-${version}.jar"/>
 		</fileset>
 		<pathelement location="${test.classes.dir}" />
 		<pathelement location="${test.src.dir}" />

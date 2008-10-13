@@ -443,6 +443,14 @@ public class Message extends FieldMap {
         parse(messageData, dd, dd, doValidation);
     }
     
+    public void fromString(String messageData, DataDictionary sessionDictionary,
+            DataDictionary applicationDictionary, boolean doValidation) throws InvalidMessage {
+        if (MessageUtils.isAdminMessage(MessageUtils.getMessageType(messageData))) {
+            applicationDictionary = sessionDictionary;
+        }
+        parse(messageData, sessionDictionary, applicationDictionary, doValidation);
+    }
+    
     void parse(String messageData, DataDictionary sessionDataDictionary, 
             DataDictionary applicationDataDictionary, boolean doValidation)
             throws InvalidMessage {

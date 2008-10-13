@@ -19,8 +19,6 @@
 
 package quickfix;
 
-import static quickfix.SessionSettings.*;
-
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;

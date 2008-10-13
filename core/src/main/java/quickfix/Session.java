@@ -2035,8 +2035,14 @@ public class Session {
     }
 
     /**
-     * Not intended for end users.
-     * @return the default application version ID
+     * @return the default application version ID for messages sent from this session
+     */
+    public ApplVerID getSenderDefaultApplicationVersionID() {
+        return new ApplVerID(senderDefaultApplVerID.getValue());
+    }
+
+    /**
+     * @return the default application version ID for messages received by this session
      */
     public ApplVerID getTargetDefaultApplicationVersionID() {
         return targetDefaultApplVerID.get();

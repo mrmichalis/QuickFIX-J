@@ -51,6 +51,33 @@ public class DefaultSessionFactoryTest {
     }
 
     @Test
+    public void testFixTMinimalSettings() throws Exception { 
+        sessionID = new SessionID(FixVersions.BEGINSTRING_FIXT11, "SENDER", "TARGET");
+        setUpDefaultSettings(sessionID);
+        factory = new DefaultSessionFactory(new ATApplication(), new MemoryStoreFactory(),
+                new ScreenLogFactory(true, true, true));
+        Exception e = null;
+        try {
+            factory.create(sessionID, settings);
+        } catch (Exception ex) {
+            e = ex;
+        }
+        assertNotNull(e);
+        
+        Session sess = null;
+        settings.setString(sessionID, Session.SETTING_DEFAULT_APPL_VER_ID, "5");
+        e = null;
+        try {
+            sess = factory.create(sessionID, settings);
+            assertNotNull(sess);
+            assertEquals(new ApplVerID("5"), sess.getSenderDefaultApplicationVersionID());
+        } catch (Exception ex) {
+            e = ex;
+        }
+        assertNull(e);
+    }
+    
+    @Test
     public void testFixtDataDictionaryConfiguration() throws Exception {
         SessionID sessionID = new SessionID(FixVersions.BEGINSTRING_FIXT11, "SENDER", "TARGET");
         setUpDefaultSettings(sessionID);
@@ -154,7 +181,7 @@ public class DefaultSessionFactoryTest {
     }
 
     @Test
-    public void testTestRequestDeayMultiplier() throws Exception {
+    public void testTestRequestDelayMultiplier() throws Exception {
         settings.setString(sessionID, Session.SETTING_TEST_REQUEST_DELAY_MULTIPLIER, "0.37");
         Session session = factory.create(sessionID, settings);
         assertEquals(0.37, session.getTestRequestDelayMultiplier(), 0);
