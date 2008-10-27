@@ -138,6 +138,7 @@ public class TestConnection {
 
         public void messageReceived(IoSession session, Object message) throws Exception {
             messages.add(message);
+            System.out.println("***connection "+this + " for sesion "+session + "got message: "+message);
         }
         
         public IoSession getSession() {

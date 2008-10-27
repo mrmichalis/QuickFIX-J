@@ -1,6 +1,7 @@
 package quickfix;
 
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.Date;
 
@@ -57,6 +58,34 @@ public class SessionTest extends TestCase {
         assertEquals(2, state.getNextSenderMsgSeqNum());
         assertEquals(2, state.getNextTargetMsgSeqNum());
     }
+
+    /** do not checkin - this is a dummy test of sending a text message and making sure it comes back as "sent" *
+    public void testSendToTarget() throws Exception {
+        String settingsString = "";
+        settingsString += "[SESSION]\n";
+        settingsString += "BeginString=FIX.4.4\n";
+        settingsString += "SenderCompID=SENDER\n";
+        settingsString += "TargetCompID=TARGET\n";
+        settingsString += "ConnectionType=initiator\n";
+        settingsString += "SocketConnectHost=localhost\n";
+        settingsString += "SocketConnectPort=7001\n";
+        settingsString += "HeartBtInt=30\n";
+        settingsString += "StartTime=00:00:00\n";
+        settingsString += "EndTime=00:00:00\n";
+
+        SessionSettings settings = new SessionSettings(new ByteArrayInputStream(settingsString.getBytes()));
+        settings.setString(Session.SETTING_USE_DATA_DICTIONARY, "N");
+        SessionID sessionID = new SessionID("FIX.4.4", "SENDER", "TARGET");
+        DefaultSessionFactory factory = new DefaultSessionFactory(new UnitTestApplication(),
+                new MemoryStoreFactory(), null);
+        Session session = factory.create(sessionID, settings);
+        assertNotNull(session);
+        logonTo(session);
+        boolean result = Session.sendToTarget(createAppMessage(1), session.getSessionID());
+        assertTrue("send failed", result);
+
+    }
+*/
 
     public void testSequenceRollbackOnCallbackException() throws Exception {
 

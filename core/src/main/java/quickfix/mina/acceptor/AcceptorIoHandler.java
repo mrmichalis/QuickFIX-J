@@ -21,23 +21,25 @@ package quickfix.mina.acceptor;
 
 import org.apache.mina.common.IoSession;
 
-import quickfix.Log;
-import quickfix.Message;
-import quickfix.MessageUtils;
-import quickfix.Session;
-import quickfix.SessionID;
-import quickfix.field.HeartBtInt;
-import quickfix.field.MsgType;
+import quickfix.*;
+import quickfix.field.*;
 import quickfix.mina.AbstractIoHandler;
 import quickfix.mina.EventHandlingStrategy;
 import quickfix.mina.IoSessionResponder;
 import quickfix.mina.NetworkingOptions;
 import quickfix.mina.SessionConnector;
 
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.io.ByteArrayInputStream;
+
 class AcceptorIoHandler extends AbstractIoHandler {
     private final EventHandlingStrategy eventHandlingStrategy;
 
     private final AcceptorSessionProvider sessionProvider;
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(10);
 
     public AcceptorIoHandler(AcceptorSessionProvider sessionProvider, NetworkingOptions networkingOptions,
             EventHandlingStrategy eventHandingStrategy) {
@@ -51,7 +53,7 @@ class AcceptorIoHandler extends AbstractIoHandler {
         log.info("MINA session created: " + session.getRemoteAddress());
     }
 
-    protected void processMessage(IoSession protocolSession, Message message) throws Exception {
+    protected void processMessage(final IoSession protocolSession, Message message) throws Exception {
         Session qfSession = (Session) protocolSession.getAttribute(SessionConnector.QF_SESSION);
         if (qfSession == null) {
             if (message.getHeader().getString(MsgType.FIELD).equals(MsgType.LOGON)) {
@@ -61,9 +63,9 @@ class AcceptorIoHandler extends AbstractIoHandler {
                     Log sessionLog = qfSession.getLog();
                     if (qfSession.hasResponder()) {
                         // Session is already bound to another connection
-                        sessionLog
-                                .onEvent("Multiple logons/connections for this session are not allowed");
-                        protocolSession.close();
+                        String rejectMsg = "Multiple logons/connections for this session are not allowed";
+                        sessionLog.onEvent(rejectMsg);
+                        sendRejectOnMultipleLogonsAndDisconnect(protocolSession, message, qfSession, sessionID, sessionLog, rejectMsg);
                         return;
                     }
                     sessionLog.onEvent("Accepting session " + qfSession.getSessionID() + " from "
@@ -96,6 +98,48 @@ class AcceptorIoHandler extends AbstractIoHandler {
         } else {
             eventHandlingStrategy.onMessage(qfSession, message);
         }
+    }
+
+    /** When multiple logons are detected, we want to not only disconnect the session immediately, but also
+     * to send a reject message
+     * We can't send the reject messge on the known session since it'll go to a valid existing connection.
+     * Instead, create a temp IoSessionResponder with a vanilla session info that has the incoming session id,
+     * increment the msgSeqNum and send a reject back on that, and close the responder immediately.
+     */
+    private void sendRejectOnMultipleLogonsAndDisconnect(final IoSession protocolSession, Message message,
+                                                         Session qfSession, SessionID sessionID, final Log sessionLog, String rejectMsg)
+            throws ConfigError, FieldNotFound {
+        // approach a: create a temp session to reply to the incoming multiple-logged on request
+        SessionFactory sessFactory = new DefaultSessionFactory(new ApplicationAdapter(), new MemoryStoreFactory(), null);
+        String settingsString = "";
+        settingsString += "[default]\n";
+        settingsString += "BeginString="+qfSession.getSessionID().getBeginString()+"\n";
+        settingsString += "ConnectionType=acceptor\n";
+        settingsString += "StartTime=00:00:00\n";
+        settingsString += "EndTime=00:00:00\n";
+        final Session tempSession = sessFactory.create(qfSession.getSessionID(),
+                new SessionSettings(new ByteArrayInputStream(settingsString.getBytes())));
+
+        // create a reject with a reason for disconnect
+        Message reject = qfSession.getMessageFactory().create(sessionID.getBeginString(), MsgType.LOGOUT);
+        reject.setField(new Text(rejectMsg));
+        reject.getHeader().setField(new MsgSeqNum(message.getHeader().getInt(MsgSeqNum.FIELD)+1));
+        reject.getHeader().setField(new SenderCompID(sessionID.getSenderCompID()));
+        reject.getHeader().setField(new TargetCompID(sessionID.getTargetCompID()));
+        reject.getHeader().setField(new SendingTime(new Date()));
+        sessionLog.onEvent("sending reject for multiple logons to "+tempSession.getSessionID() + ": "+reject);
+
+        // Create a temp responder to reply with reject directly on the established channel
+        final IoSessionResponder responder = new IoSessionResponder(protocolSession, true, 100);
+        responder.send(reject.toString());
+        // disconnect the responder in the future to give it some time to send a message out
+        executor.schedule((new Runnable() {
+            public void run() {
+                responder.disconnect();
+                protocolSession.close();
+                sessionLog.onEvent("Closed protocol/responder for duplicate session: "+tempSession.getSessionID());
+            }
+        }), 3, TimeUnit.SECONDS);
     }
 
     protected Session findQFSession(IoSession protocolSession, SessionID sessionID) {

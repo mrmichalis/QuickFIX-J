@@ -19,6 +19,7 @@
 	================================================================= -->
 
 	<property name="target.generated.src.dir" value="${target.dir}/src-generated" />
+	<property name="skip.jalopy" value="true"/>
 
 	<target name="check.generated.isuptodate">
 		<uptodate property="generated.isuptodate">
@@ -32,7 +33,7 @@
 		<antcall target="format.generated.code" />
 	</target>
 
-	<property name="generator.decimal" value="false" />
+	<property name="generator.decimal" value="true" />
 	<property name="generator.orderedFields" value="false" />
 
 	<target name="regenerate.code">
@@ -236,7 +237,7 @@
 		<junit fork="${utest.fork}" dir="${junit.fork.dir}" tempdir="${junit.output.dir}" printsummary="true" showoutput="false" errorproperty="utests.failed" failureproperty="utests.failed" haltonfailure="${junit.haltonfailure}">
 			<!-- The plain formatter is breaking the Pulse CI report generator -->
 			<!-- <formatter type="plain" usefile="true" /> -->
-			<formatter type="xml" usefile="true" />
+			<formatter type="plain" usefile="true" />
 			<classpath refid="test.classpath" />
 			<batchtest todir="${junit.output.dir}">
 				<fileset dir="${test.src.dir}">
@@ -295,6 +296,7 @@
 			<sysproperty key="atest.timeout" value="${atest.timeout}" />
 			<sysproperty key="atest.reconnectDelay" value="${atest.reconnectDelay}" />
 			<sysproperty key="atest.skipslow" value="${atest.skipslow}" />
+			<formatter type="plain" usefile="true" />
 			<formatter type="xml" usefile="true" />
 			<classpath refid="test.classpath" />
 			<test todir="${junit.output.dir}" name="${atest.classname}" />
