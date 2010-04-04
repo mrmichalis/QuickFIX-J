@@ -22,21 +22,21 @@
   	<modules>
   		<module>core</module> 
  		<module>examples</module>
+ 		<module>distribution</module>
    	</modules>
 
 	<repositories>
-    	<repository>
-      		<id>Oracle</id>
-      		<url>http://download.oracle.com/maven</url>
-    	</repository>
+    		<repository>
+      			<id>Oracle</id>
+			<url>http://download.oracle.com/maven</url>
+    		</repository>
     	
-     	 <repository>  
-    	 	<id>com.springsource.repository.bundles.external</id>  
-    	 	<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>  
-    	 	<url>http://repository.springsource.com/maven/bundles/external</url> 
-    	 </repository> 	
-    	  
-  	</repositories>
+     	 	<repository>  
+    	 		<id>com.springsource.repository.bundles.external</id>  
+    	 		<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>  
+    	 		<url>http://repository.springsource.com/maven/bundles/external</url> 
+    	 	</repository> 	
+	</repositories>
 
 	<dependencyManagement>
 		<dependencies>
@@ -108,14 +108,6 @@
 			    <version>1.4</version>
 			    <scope>test</scope>
 			</dependency>
-	<!-- 
-			<dependency>
-			    <groupId>com.jcraft</groupId>
-			    <artifactId>jsch</artifactId>
-			    <version>0.1.23</version>
-			    <scope>test</scope>
-			</dependency>
-	 -->		
 			
 			<dependency>
 			    <groupId>tyrex</groupId>
@@ -147,7 +139,7 @@
 					<fork>true</fork>
 					<maxmem>512m</maxmem>
 				</configuration>
-			</plugin>
+			</plugin>        
 		</plugins>
 	</build>
 

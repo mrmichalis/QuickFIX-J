@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <name>QuickFIX/J Distribution</name>
+  <artifactId>quickfixj-distribution</artifactId>
+  <packaging>pom</packaging>
+
+  <parent>
+    <groupId>org.quickfixj</groupId>
+    <artifactId>quickfixj-project</artifactId>
+    <version>1.5.0-SNAPSHOT</version>
+  </parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>quickfixj</artifactId>
+    <version>1.5.0-SNAPSHOT</version>
+		</dependency>	
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>quickfixj-examples</artifactId>
+    <version>1.5.0-SNAPSHOT</version>
+		</dependency>	
+	</dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-antrun-plugin</artifactId>
+	<version>1.1</version>
+	<executions>
+	  <execution>
+	    <id>generate-message-sources</id>
+	    <phase>generate-sources</phase>
+	    <configuration>
+	      <tasks>
+		<property name="project.build.directory" value="${project.build.directory}"/>
+		<property name="project.version" value="${project.version}"/>
+		<property name="maven.runtime.classpath" refid="maven.runtime.classpath"/>
+		<ant antfile="${project.build.scriptSourceDirectory}/ant-dist.xml" 
+		     target="release.versioned" inheritRefs="true"/>
+	      </tasks>
+	    </configuration>
+	    <goals>
+	      <goal>run</goal>
+	    </goals>
+	  </execution>
+	</executions>
+	<dependencies>
+	  <dependency>
+	    <groupId>ant</groupId>
+	    <artifactId>ant-nodeps</artifactId>
+	    <version>1.6.5</version>
+	    <scope>runtime</scope>
+	  </dependency>
+	</dependencies>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

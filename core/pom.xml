@@ -93,7 +93,7 @@
 							<sourceRoot>${basedir}/target/generated-sources/messages</sourceRoot>
 							<tasks>
 								<property name="compile.classpath" refid="maven.compile.classpath"/>
-								<ant antfile="codegen.xml" target="generate.code" inheritRefs="true"/>
+								<ant antfile="${basedir}/src/main/ant/ant-codegen.xml" target="generate.code" inheritRefs="true"/>
   							</tasks>
 						</configuration>
 						<goals>
@@ -108,7 +108,7 @@
 		        <version>2.5</version>
 		        <configuration>
 		          <excludes>
-		            <include>**/Acceptance*.*</include>
+		            <exclude>**/Acceptance*.*</exclude>
 		          </excludes>
 		        </configuration>
 		  	</plugin>
