@@ -31,7 +31,7 @@ public class AcceptanceTestSuite extends TestSuite {
     private static final String ATEST_TRANSPORT_KEY = "atest.transport";
     private static final String ATEST_SKIPSLOW_KEY = "atest.skipslow";
     private static Logger log = LoggerFactory.getLogger(AcceptanceTestSuite.class);
-    private String acceptanceTestBaseDir = "src/test/java/quickfix/test/acceptance/definitions/";
+    private String atDefinitionsDir = "quickfix/test/acceptance/definitions/";
     private boolean skipSlowTests;
     private static TransportType transportType = TransportType.SOCKET;
     private static int port = 9887;
@@ -132,7 +132,8 @@ public class AcceptanceTestSuite extends TestSuite {
         }
     }
 
-    public AcceptanceTestSuite() {
+    public AcceptanceTestSuite(String category) {
+    	super("FIX Scenarios: " + category);
         Long timeout = Long.getLong(ATEST_TIMEOUT_KEY);
         if (timeout != null) {
             ExpectMessageStep.TIMEOUT_IN_MS = timeout.longValue();
@@ -140,8 +141,7 @@ public class AcceptanceTestSuite extends TestSuite {
 
         this.skipSlowTests = Boolean.getBoolean(ATEST_SKIPSLOW_KEY);
 
-        //addTest("fix50/1d_InvalidLogonNoDefaultApplVerID.def");
-        //if (true) return;
+        String acceptanceTestBaseDir = getClass().getClassLoader().getResource(atDefinitionsDir).getPath();
         
         addTests(new File(acceptanceTestBaseDir + "server/fix40"));
         addTests(new File(acceptanceTestBaseDir + "server/fix41"));
@@ -151,8 +151,8 @@ public class AcceptanceTestSuite extends TestSuite {
         addTests(new File(acceptanceTestBaseDir + "server/fix50"));
     }
 
-    protected void addTest(String name) {
-        addTests(new File(acceptanceTestBaseDir + "server/" + name));
+    protected void addTest(String baseDir, String name) {
+        addTests(new File(baseDir + "server/" + name));
     }
 
     protected void addTests(File directory) {
@@ -214,10 +214,6 @@ public class AcceptanceTestSuite extends TestSuite {
             }
             super.tearDown();
         }
-
-        public String toString() {
-            return "Acceptance Test Server Context";
-        }
     }
 
     public static Test suite() {
@@ -225,11 +221,10 @@ public class AcceptanceTestSuite extends TestSuite {
                 .getInstance(System.getProperty(ATEST_TRANSPORT_KEY, "SOCKET"));
         port = AvailablePortFinder.getNextAvailable(port);
         TestSuite acceptanceTests = new TestSuite();
-        final AcceptanceTestSuite scriptedTests = new AcceptanceTestSuite();
-        acceptanceTests.addTest(new AcceptanceTestServerSetUp(scriptedTests, false));
-        acceptanceTests.addTest(new AcceptanceTestServerSetUp(scriptedTests, true));
-        acceptanceTests.addTestSuite(TimerTest.class);
-        acceptanceTests.addTestSuite(ResynchTest.class);
+        AcceptanceTestSuite multiThreadedFixTests = new AcceptanceTestSuite("single threaded");
+        acceptanceTests.addTest(new AcceptanceTestServerSetUp(multiThreadedFixTests, false));
+        AcceptanceTestSuite singleThreadedFixTests = new AcceptanceTestSuite("multithreaded");
+       acceptanceTests.addTest(new AcceptanceTestServerSetUp(singleThreadedFixTests, true));
         return acceptanceTests;
     }
 }

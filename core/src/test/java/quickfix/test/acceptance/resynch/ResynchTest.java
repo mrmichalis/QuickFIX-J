@@ -28,13 +28,13 @@ public class ResynchTest extends TestCase {
 
     ResynchTestServer server;
 
-    public void testAcceptorTimerSync() throws ConfigError, SessionNotFound, InterruptedException {
+    public void testSync() throws ConfigError, SessionNotFound, InterruptedException {
         serverThread.start();
         server.waitForInitialization();
         new ResynchTestClient().run();
     }
 
-    public void testAcceptorTimerUnsync() throws ConfigError, SessionNotFound, InterruptedException {
+    public void testUnsync() throws ConfigError, SessionNotFound, InterruptedException {
         server.setUnsynchMode(true);
         serverThread.start();
         server.waitForInitialization();
@@ -43,7 +43,7 @@ public class ResynchTest extends TestCase {
         client.run();
     }
 
-    public void testAcceptorTimerUnsyncWith() throws ConfigError, SessionNotFound, InterruptedException {
+    public void testUnsyncWith() throws ConfigError, SessionNotFound, InterruptedException {
         server.setUnsynchMode(true);
         serverThread.start();
         server.waitForInitialization();
@@ -56,7 +56,7 @@ public class ResynchTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         server = new ResynchTestServer();
-        serverThread = new Thread(server, "TimerTestServer");
+        serverThread = new Thread(server, "ResynchTestServer");
     }
 
     protected void tearDown() throws Exception {
