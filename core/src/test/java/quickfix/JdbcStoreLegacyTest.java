@@ -19,6 +19,8 @@
 
 package quickfix;
 
+import static quickfix.JdbcTestSupport.*;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -34,11 +36,17 @@ public class JdbcStoreLegacyTest extends JdbcStoreTest {
         Connection connection = null;
         try {
             connection = getDataSource().getConnection();
+            if (messagesTableName != null) {
+                dropTable(connection, messagesTableName);
+            }
             JdbcTestSupport.loadSQL(connection,
-                    "core/src/main/config/sql/mysql/messages_table.sql",
+                    "src/main/config/sql/mysql/messages_table.sql",
                     new JdbcTestSupport.HypersonicLegacyPreprocessor(messagesTableName));
+            if (sessionsTableName != null) {
+                dropTable(connection, sessionsTableName);
+            }
             JdbcTestSupport.loadSQL(connection,
-                    "core/src/main/config/sql/mysql/sessions_table.sql",
+                    "src/main/config/sql/mysql/sessions_table.sql",
                     new JdbcTestSupport.HypersonicLegacyPreprocessor(sessionsTableName));
         } finally {
             JdbcUtil.close(null, connection);

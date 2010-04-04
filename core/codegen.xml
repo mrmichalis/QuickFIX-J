@@ -1,0 +1,72 @@
+<project>
+	<description>QFJ Message Code Generation Tasks</description>
+	
+	<property name="generator.decimal" value="false" />
+	<property name="generator.orderedFields" value="false" />
+	<property name="skip.jalopy" value="true"/>
+		
+	<property name="target.dir" value="${basedir}/target"/>
+	<property name="java.src.dir" value="${basedir}/src/main/java"/>
+	<property name="java.classes.dir" value="${target.dir}/classes"/>
+	<property name="resources.dir" value="${basedir}/src/main/resources"/>
+	<property name="target.generated.src.dir" value="${target.dir}/generated-sources/messages" />
+
+
+	<target name="check.generated.isuptodate">
+		<uptodate property="generated.isuptodate">
+			<srcfiles dir="${resources.dir}" includes="FIX4*.xml" />
+			<globmapper from="FIX*.xml" to="${target.generated.src.dir}/quickfix/fix*/Message.java" />
+		</uptodate>
+	</target>
+
+	<target name="generate.code" unless="generated.isuptodate" depends="check.generated.isuptodate" description="generate FIX message code">
+		<antcall target="regenerate.code" />
+		<antcall target="format.generated.code" />
+	</target>
+
+	<target name="regenerate.code">
+		<mkdir dir="${java.classes.dir}" />
+		
+		<javac srcdir="${java.src.dir}" 
+			includes="**/quickfix/codegen/*.java" 
+			destdir="${java.classes.dir}" 
+			classpath="${compile.classpath}">
+		</javac>
+		
+		<java classname="quickfix.codegen.MessageCodeGenerator" fork="yes">
+			<jvmarg value="-Xms128m" />
+			<jvmarg value="-Xmx256m" />
+			<jvmarg value="-Dgenerator.decimal=${generator.decimal}" />
+			<jvmarg value="-Dgenerator.orderedFields=${generator.orderedFields}" />
+			<arg value="${resources.dir}" />
+			<arg value="${java.src.dir}/quickfix/codegen" />
+			<arg value="${target.generated.src.dir}" />
+			<classpath>
+				<pathelement location="${java.classes.dir}" />
+				<path path="${compile.classpath}" />
+			</classpath>
+		</java>
+	</target>
+	
+	<!-- ==================================================================== -->
+	<!-- Defines the Jalopy task -->
+	<!-- ==================================================================== -->
+	
+	<!-- This does not use the Maven classpath -->
+	<taskdef name="jalopy" classname="de.hunsicker.jalopy.plugin.ant.AntPlugin">
+		<classpath>
+			<fileset dir="${basedir}/src/main/lib/build"/>
+		</classpath>
+	</taskdef>
+
+
+	<target name="format.generated.code" description="Format the generated FIX message code using Jalopy.
+		Mostly interested in getting all the tabbing right." unless="skip.jalopy">
+		<jalopy classpathref="main.lib.classpath" fileformat="unix">
+			<fileset dir="${target.generated.src.dir}">
+				<include name="**/*.java" />
+			</fileset>
+		</jalopy>
+	</target>
+
+</project>

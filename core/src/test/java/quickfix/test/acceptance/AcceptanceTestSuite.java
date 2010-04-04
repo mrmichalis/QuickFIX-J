@@ -31,7 +31,7 @@ public class AcceptanceTestSuite extends TestSuite {
     private static final String ATEST_TRANSPORT_KEY = "atest.transport";
     private static final String ATEST_SKIPSLOW_KEY = "atest.skipslow";
     private static Logger log = LoggerFactory.getLogger(AcceptanceTestSuite.class);
-    private String acceptanceTestBaseDir = "core/src/test/java/quickfix/test/acceptance/definitions/";
+    private String acceptanceTestBaseDir = "src/test/java/quickfix/test/acceptance/definitions/";
     private boolean skipSlowTests;
     private static TransportType transportType = TransportType.SOCKET;
     private static int port = 9887;

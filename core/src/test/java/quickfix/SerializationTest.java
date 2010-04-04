@@ -27,7 +27,7 @@ import junit.framework.TestCase;
 
 public class SerializationTest extends TestCase {
 
-    private String[] srcDirs = new String[] { "src-generated", "core/target/src-generated" };
+    private String[] srcDirs = new String[] { "target/generated-sources/messages" };
     private String srcDir;
 
     public SerializationTest(String name) {
@@ -295,7 +295,7 @@ public class SerializationTest extends TestCase {
     }
 
     private static final String classesBaseDirForEclipse = "classes";
-    private static final String classesBaseDirForAnt = "core/target/classes/main";
+    private static final String classesBaseDirForAnt = "target/classes";
 
     private String getBaseDirectory() {
         return new File(classesBaseDirForEclipse).exists() ? classesBaseDirForEclipse : classesBaseDirForAnt;

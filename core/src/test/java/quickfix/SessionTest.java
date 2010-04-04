@@ -1,10 +1,7 @@
 package quickfix;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static quickfix.SessionFactoryTestSupport.createSession;
+import static org.junit.Assert.*;
+import static quickfix.SessionFactoryTestSupport.*;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -12,18 +9,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import quickfix.field.BeginSeqNo;
-import quickfix.field.BeginString;
-import quickfix.field.EncryptMethod;
-import quickfix.field.EndSeqNo;
-import quickfix.field.Headline;
-import quickfix.field.HeartBtInt;
-import quickfix.field.MsgSeqNum;
-import quickfix.field.MsgType;
-import quickfix.field.SenderCompID;
-import quickfix.field.SendingTime;
-import quickfix.field.TargetCompID;
-import quickfix.field.TestReqID;
+import quickfix.field.*;
 import quickfix.fix44.Logon;
 import quickfix.fix44.News;
 import quickfix.fix44.ResendRequest;
@@ -234,20 +220,25 @@ public class SessionTest {
         }
     }
 
+    // QFJ-286 Target sequence number not correct after ResendRequest when PersistMessages=N
     @Test
     public void testNonpersistedGapFill() throws Exception {
         SessionID sessionID = new SessionID("FIX.4.4:SENDER->TARGET");
         Session session = SessionFactoryTestSupport.createNonpersistedSession(sessionID, new UnitTestApplication(), false);
+        
         session.getStore().setNextTargetMsgSeqNum(200);
         SessionState state = ReflectionUtil.getField(session, "state", SessionState.class);
         state.setLogonReceived(true);
+        
         ResendRequest resendRequest = new ResendRequest();
         resendRequest.getHeader().setField(new SenderCompID(sessionID.getTargetCompID()));
         resendRequest.getHeader().setField(new TargetCompID(sessionID.getSenderCompID()));
         resendRequest.getHeader().setField(new SendingTime(new Date()));
+        resendRequest.getHeader().setField(new MsgSeqNum(state.getNextTargetMsgSeqNum()));
         resendRequest.set(new BeginSeqNo(1));
         resendRequest.set(new EndSeqNo(100));
         session.next(resendRequest);
+        
         assertEquals(201, state.getNextTargetMsgSeqNum());
     }
     

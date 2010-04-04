@@ -55,6 +55,32 @@
 		</java>
 	</target>
 
+	<!-- 
+									<echo message="*** Compile the code generator ***" />
+								
+									<javac 
+										srcdir="${basedir}/src/main/java"
+										includes="**/quickfix/codegen/*.java" 
+										destdir="${basedir}/target/classes"
+										classpathref="maven.compile.classpath">
+									</javac>
+
+	 								<echo message= "*** Generate Code ***"/>
+									<java classname="quickfix.codegen.MessageCodeGenerator" fork="yes">
+										<jvmarg value="-Xms128m" />
+										<jvmarg value="-Xmx256m" />
+										<jvmarg value="-Dgenerator.decimal=false" />
+										<jvmarg value="-Dgenerator.orderedFields=false" />
+										<arg value="${basedir}/src/main/resources" />
+										<arg value="${basedir}/src/main/java/quickfix/codegen" />
+										<arg value="${basedir}/target/generated-sources" />
+										<classpath>
+											<pathelement location="${basedir}/target/classes" />
+											<path refid="maven.compile.classpath" />
+										</classpath>
+									</java>
+	 -->
+
 	<!-- ==================================================================== -->
 	<!-- Defines the Jalopy task -->
 	<!-- ==================================================================== -->
