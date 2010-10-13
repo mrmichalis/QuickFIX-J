@@ -17,7 +17,7 @@
  * are not clear to you.
  ******************************************************************************/
 
-package quickfix.codegen;
+package quickfixj.codegenerator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
