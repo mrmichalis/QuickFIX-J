@@ -121,7 +121,7 @@ public class SLF4JLog extends AbstractLog {
             String message = logPrefix != null ? (logPrefix + text) : text;
             if (log instanceof LocationAwareLogger) {
                 LocationAwareLogger la = (LocationAwareLogger) log;
-                la.log(null, callerFQCN, LocationAwareLogger.INFO_INT, message, null);
+                la.log((org.slf4j.Marker)null, callerFQCN, LocationAwareLogger.INFO_INT, message, null, null);
             } else {
                 log.info(message);
             }
