@@ -285,6 +285,13 @@ public class MessageCodeGenerator {
             return;
         }
 
+        if (outputFile.exists() && (outputFile.lastModified()>task.getSpecificationLastModified())) {
+            log.debug("Skipping file "+ outputFile.getName());
+            return;
+        } else {
+            log.debug("spec has mod "+task.getSpecificationLastModified()+" output has mod "+outputFile.lastModified());
+        }
+
         DOMSource source = new DOMSource(document);
         StreamResult result = new StreamResult(new FileOutputStream(outputFile));
         transformer.transform(source, result);
@@ -318,6 +325,11 @@ public class MessageCodeGenerator {
         private File transformDirectory;
         private boolean orderedFields;
         private boolean useDecimal;
+        private long specificationLastModified;
+        
+        public long getSpecificationLastModified() {
+            return specificationLastModified;
+        }
 
         public String getName() {
             return name;
