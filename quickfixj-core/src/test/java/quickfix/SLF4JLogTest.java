@@ -258,7 +258,7 @@ public class SLF4JLogTest extends TestCase {
         Vector<String> messages = new Vector<String>();
         Vector<String> fqcns = new Vector<String>();
 
-        public void log(Marker marker, String fqcn, int level, String message, Object[] ob, Throwable t) {
+        public void log(Marker marker, String fqcn, int level, String message, Throwable t) {
             messages.add(message);
             fqcns.add(fqcn);
         }
