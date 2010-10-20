@@ -1,33 +1,82 @@
-<project name="core" basedir="." default="jar">
+<project name="quickfixj-messages" basedir="." default="jar">
 	<import file="../module.xml" />
-
+	
 	<tstamp>
 		<format property="timestamp" pattern="yyyy-MM-dd hh:mm:ss" />
 	</tstamp>
 
+	<path id="jalopy.classpath" description="Jalopy tool path">
+		<fileset dir="${main.lib.dir}/build">
+			<include name="jalopy*.jar" />
+		</fileset>
+		<fileset dir="${main.optional.lib.dir}">
+			<include name="log4j*.jar" />
+		</fileset>
+	</path>
+
+	<!-- =============================================================
+	Generate FIX Message Code
+	================================================================= -->
+
+
+	<target name="check.generated.isuptodate">
+		<uptodate property="generated.isuptodate">
+			<srcfiles dir="${main.messages.dir}" includes="FIX4*.xml" />
+			<globmapper from="FIX*.xml" to="${target.generated.src.dir}/quickfix/fix*/Message.java" />
+		</uptodate>
+	</target>
+
+	<target name="generate.code" unless="generated.isuptodate" depends="check.generated.isuptodate" description="generate FIX message code">
+		<antcall target="regenerate.code" />
+		<antcall target="format.generated.code" />
+	</target>
+
+	<property name="generator.decimal" value="false" />
+	<property name="generator.orderedFields" value="false" />
+
+	<target name="regenerate.code">
+		<mkdir dir="${main.classes.dir}" />
+		<java classname="quickfixj.codegenerator.MessageCodeGenerator" fork="yes">
+			<jvmarg value="-Xms128m" />
+			<jvmarg value="-Xmx256m" />
+			<jvmarg value="-Dgenerator.decimal=${generator.decimal}" />
+			<jvmarg value="-Dgenerator.orderedFields=${generator.orderedFields}" />
+			<arg value="${main.resources.dir}" />
+			<arg value="${target.classes.dir}" />
+			<arg value="${target.generated.src.dir}" />
+			<classpath>
+				<pathelement location="${main.classes.dir}" />
+				<pathelement location="../quickfixj-codegenerator/target/quickfixj-codegenerator-${quickfixj.version}.jar" />
+				<path refid="main.lib.classpath" />
+			</classpath>
+		</java>
+	</target>
+
+	<!-- ==================================================================== -->
+	<!-- Defines the Jalopy task -->
+	<!-- ==================================================================== -->
+
+	<taskdef name="jalopy" classname="de.hunsicker.jalopy.plugin.ant.AntPlugin" classpathref="jalopy.classpath" />
+
+	<target name="format.generated.code" description="Format the generated FIX message code using Jalopy.
+		Mostly interested in getting all the tabbing right." unless="skip.jalopy">
+		<jalopy classpathref="main.lib.classpath" fileformat="unix">
+			<fileset dir="${target.generated.src.dir}">
+				<include name="**/*.java" />
+			</fileset>
+		</jalopy>
+	</target>
 
 
 	<!-- =============================================================
 	Compile Sources
 	================================================================= -->
 
-	<target name="compile" description="compile the sources">
-		<antcall target="compile_main" />
-		<antcall target="compile_test" />
-	</target>
-
-	<target name="compile_main" if="main.java.available">
+	<target name="compile" depends="generate.code" description="compile the sources">
 		<copy todir="${main.classes.dir}">
 			<fileset dir="${main.resources.dir}"/>
 		</copy>
-		<do_compile srcref="main.src.path" classpathref="compile.classpath" output="${main.classes.dir}" />
-	</target>
-
-	<target name="compile_test" if="test.java.available">
-		<copy todir="${test.classes.dir}">
-			<fileset dir="${test.resources.dir}"/>
-		</copy>
-		<do_compile srcref="test.src.path" classpathref="compile.classpath" output="${test.classes.dir}" />
+		<do_compile srcref="target.generated.src.dir" classpathref="compile.classpath" output="${target.classes.dir}" />
 	</target>
 
 	<property name="javac.debug" value="true" />
@@ -53,6 +102,7 @@
 	================================================================= -->
 
 	<property name="quickfixj.core.jar" value="quickfixj-core-${quickfixj.version}.jar" />
+	<property name="quickfixj.all.jar" value="quickfixj-all-${quickfixj.version}.jar" />
 
 	<target name="jar" description="build jar files" depends="compile">
 		<mkdir dir="${target.dir}" />
@@ -61,20 +111,36 @@
 			<attribute name="Implementation-Title" value="QuickFIX/J Core" />
 			<attribute name="Implementation-Version" value="${quickfixj.version}" />
 		</manifest>
-		<jar destfile="${jar.output.dir}/${quickfixj.core.jar}" manifest="${jar.output.dir}/MANIFEST.MF">
-			<fileset dir="${main.classes.dir}">
-				<exclude name="quickfix/fix??/**" />
-				<exclude name="quickfix/fixt??/**" />
-			</fileset>
-			<fileset dir="${main.resources.dir}">
-				<exclude name="FIX??.xml" />
-				<exclude name="FIXT??.xml" />
-			</fileset>
+		<jar destfile="${jar.output.dir}/${quickfixj.all.jar}" manifest="${jar.output.dir}/MANIFEST.MF">
+			<fileset dir="${main.classes.dir}"/>
+			<fileset dir="${main.resources.dir}"/>
 			<fileset dir="${main.src.dir}">
 				<include name="**/*.cert" />
 			</fileset>
 		</jar>
+		<create-message-jar fixVersion="40" />
+		<create-message-jar fixVersion="41" />
+		<create-message-jar fixVersion="42" />
+		<create-message-jar fixVersion="43" />
+		<create-message-jar fixVersion="44" />
+		<create-message-jar fixVersion="50" />
+		<create-message-jar fixVersion="t11" />
 	</target>
+
+	<macrodef name="create-message-jar">
+		<attribute name="fixVersion" />
+		<sequential>
+			<jar destfile="${jar.output.dir}/quickfixj-msg-fix@{fixVersion}-${quickfixj.version}.jar"
+				manifest="${jar.output.dir}/MANIFEST.MF">
+				<fileset dir="${main.resources.dir}" casesensitive="false">
+					<include name="FIX@{fixVersion}.xml" />
+				</fileset>
+				<fileset dir="${main.classes.dir}">
+					<include name="quickfix/fix@{fixVersion}/**" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
 
 	<!-- =============================================================
 	Run Tests
@@ -318,7 +384,6 @@
 
 	<path id="compile.classpath">
 		<pathelement location="${main.classes.dir}" />
-		<pathelement location="${main.messages.classes.dir}" />
 		<pathelement location="${test.classes.dir}" />
 		<path refid="main.lib.classpath" />
 		<path refid="main.optional.lib.classpath" />
@@ -341,6 +406,7 @@
 
 	<path id="main.src.path">
 		<pathelement location="${main.src.dir}" />
+		<pathelement location="${target.generated.src.dir}" />
 	</path>
 
 	<path id="test.src.path">

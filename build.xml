@@ -381,11 +381,11 @@
 			embed="org.quickfixj.java4"
 			verify="false">
 			<classpath>
-				<fileset dir="core/src/main/lib/java4">
+				<fileset dir="quickfixj-core/src/main/lib/java4">
 					<include name="*.jar"/>
 				</fileset>
 			</classpath>
-			<fileset dir="core/target/classes/test"/>
+			<fileset dir="quickfixj-core/target/classes/test"/>
 		</retrotranslator>
 
 		<property name="junit.output.dir.java4" value="${test.dir.java4}/junit"/>
@@ -405,22 +405,22 @@
 			<!-- TODO refactor class path -->
 			<!-- TODO refactor junit dir property -->
 			<classpath>
-				<pathelement location="core/src/test/java"/>
+				<pathelement location="quickfixj-core/src/test/java"/>
 				<pathelement location="${test.classes.java4}"/>
 				<fileset dir="${staging.dir.java4}/lib" includes="*.jar"/>
 				<fileset dir="${staging.dir.java4}" includes="*.jar"/>
-				<fileset dir="core/src/test/lib" includes="*.jar">
+				<fileset dir="quickfixj-core/src/test/lib" includes="*.jar">
 					<exclude name="mockito*"/>
 					<exclude name="hamcrest*"/>
                     <exclude name="junit*"/>
 				</fileset>
-				<fileset dir="core/src/main/lib/java4"
+				<fileset dir="quickfixj-core/src/main/lib/java4"
 					includes="retrotranslator/*runtime*.jar"/>
-				<fileset dir="core/src/test/lib/java4" includes="*.jar"/>
-				<fileset dir="core/src/main/lib/java4/optional" includes="*.jar"/>
+				<fileset dir="quickfixj-core/src/test/lib/java4" includes="*.jar"/>
+				<fileset dir="quickfixj-core/src/main/lib/java4/optional" includes="*.jar"/>
 			</classpath>
 			<batchtest todir="${junit.output.dir.java4}">
-				<fileset dir="core/src/test/java">
+				<fileset dir="quickfixj-core/src/test/java">
 					<include name="quickfix/*Test.java" />
 					<include name="quickfix/mina/**/*Test.java" />
 					<include name="quickfix/util/**/*Test.java" />
@@ -461,12 +461,12 @@
 			<sysproperty key="atest.skipslow" value="${atest.skipslow}" />
 			<formatter type="xml" usefile="true" />
 			<classpath>
-				<pathelement location="core/src/test/java"/>
+				<pathelement location="quickfixj-core/src/test/java"/>
 				<pathelement location="${test.classes.java4}"/>
 				<fileset dir="${staging.dir.java4}/lib" includes="*.jar"/>
 				<fileset dir="${staging.dir.java4}" includes="*.jar"/>
-				<fileset dir="core/src/test/lib" includes="*.jar"/>
-				<fileset dir="core/src/main/lib/optional"
+				<fileset dir="quickfixj-core/src/test/lib" includes="*.jar"/>
+				<fileset dir="quickfixj-core/src/main/lib/optional"
 					includes="jcl*.jar,proxool*.jar,sleepycat*.jar"/>
 			</classpath>
 			<test todir="${junit.output.dir.java4}" name="${atest.classname}" />
@@ -489,7 +489,7 @@
 				embed="org.quickfixj.java4"
 				verify="false">
 				<classpath>
-					<fileset dir="core/src/main/lib/java4">
+					<fileset dir="quickfixj-core/src/main/lib/java4">
 						<include name="*.jar"/>
 					</fileset>
 				</classpath>
