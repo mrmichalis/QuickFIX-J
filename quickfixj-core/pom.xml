@@ -38,13 +38,13 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.6.1</version>
+			<version>1.5.3</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>jcl-over-slf4j</artifactId>
-    <version>1.6.1</version>
+    <version>1.5.3</version>
 			<scope>test</scope>
 </dependency>
 		<dependency>
@@ -104,6 +104,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.0.2</version>
 				<configuration>
 					<source>1.5</source>
 					<target>1.5</target>
@@ -241,6 +242,7 @@
 			    <plugin>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-surefire-plugin</artifactId>
+				<version>2.6</version>
      <configuration>
        <testFailureIgnore>true</testFailureIgnore>
      </configuration>
